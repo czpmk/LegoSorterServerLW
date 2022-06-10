@@ -1,0 +1,17 @@
+{
+  "DESTINATION": "C:\\LEGO_repo\\dataset\\transformed",
+  "SOURCE_PATH": "C:\\LEGO_repo\\dataset\\detected\\detected",
+  "PROCESSOR": "Renders",
+  "TRANSFORMATIONS": ["Simple"],
+  "TYPES": {
+    "train_renders": {
+      "DIV_VALUE": 0.9
+    },
+    "test_renders": {
+      "DIV_VALUE": null
+    },
+    "val_renders": {
+      "DIV_VALUE": 0.1
+    }
+  }
+}

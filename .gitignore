@@ -1,0 +1,11 @@
+/venv/
+/.idea/
+/lego_sorter_server/detection/test/
+/lego_sorter_server/detection/models
+
+
+*__pycache__
+*checkpoints*
+lego_sorter_server/images/storage/stored
+*saved_model.pb*
+lego_sorter_server/classifier/models/saved
