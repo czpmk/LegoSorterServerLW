@@ -15,6 +15,7 @@ git clone https://github.com/LegoSorter/LegoSorterServer.git
 ```
 
 2. Install python packages:
+
 ```commandline
 pip3 install -r ./requirements.txt
 ```
@@ -39,7 +40,9 @@ sudo chmod -R 777 .
 unzip detection_models.zip -d ./LegoSorterServer/lego_sorter_server/analysis/detection/models
 unzip classification_models.zip -d ./LegoSorterServer/lego_sorter_server/analysis/classification/models
 ```
+
 OR use the script
+
 ```commandline
 python3 unzip_models.py
 ```
@@ -55,12 +58,14 @@ cd LegoSorterServer
 ```commandline
 export PYTHONPATH=.
 ```
-OR
+
+6. Copy builder.py to your local protobuf directory (Warning! set correct path)
+
 ```commandline
-python3 set_pythonpath.py
+wget https://raw.githubusercontent.com/protocolbuffers/protobuf/main/python/google/protobuf/internal/builder.py -O /home/mc/.local/lib/python3.8/site-packages/google/protobuf/internal/builder.py
 ```
 
-6. Run the server
+8. Run the server
 
 ```commandline
 python lego_sorter_server
