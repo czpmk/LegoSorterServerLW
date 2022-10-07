@@ -6,8 +6,8 @@ from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
 
 
 class LegoSorterController:
-    CONVEYOR_LOCAL_ADDRESS = "http://192.168.83.45:8000"
-    SORTER_LOCAL_ADDRESS = "http://192.168.83.45:8001"
+    CONVEYOR_LOCAL_ADDRESS = "http://127.0.0.1:8000"
+    SORTER_LOCAL_ADDRESS = "http://127.0.0.1:8001"
 
     def __init__(self, brickCategoryConfig: BrickCategoryConfig):
         self.speed = 50

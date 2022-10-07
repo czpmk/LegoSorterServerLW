@@ -2,8 +2,8 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import lego_sorter_server.generated.LegoCapture_pb2 as LegoCapture__pb2
-import lego_sorter_server.generated.Messages_pb2 as Messages__pb2
+from . import LegoCapture_pb2 as LegoCapture__pb2
+from . import Messages_pb2 as Messages__pb2
 
 
 class LegoCaptureStub(object):

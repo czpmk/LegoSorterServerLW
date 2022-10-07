@@ -23,6 +23,7 @@ message ImageRequest {
   int32 rotation = 2;
 }
 
+
 message Empty {
 
 }
