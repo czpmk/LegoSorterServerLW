@@ -16,7 +16,7 @@ from pathlib import Path
 
 # from models.models import *
 # from lego_sorter_server.analysis.classification.models.inceptionClear import InceptionClear
-from lego_sorter_server.analysis.classification.ClassificationResults import ClassificationResults
+from lego_sorter_server.analysis.classification.ClassificationResults import ClassificationResultsList
 from lego_sorter_server.analysis.classification.classifiers.LegoClassifier import LegoClassifier
 from lego_sorter_server.analysis.classification.toolkit.transformations.simple import Simple
 
@@ -80,12 +80,12 @@ class TFLegoClassifier(LegoClassifier):
     def save_model(self, path):
         self.model.save(path)
 
-    def predict_single(self, image: Image.Image) -> ClassificationResults:
+    def predict_single(self, image: Image.Image) -> ClassificationResultsList:
         return self.predict([image])
 
-    def predict(self, images: [Image.Image]) -> ClassificationResults:
+    def predict(self, images: [Image.Image]) -> ClassificationResultsList:
         if not images:
-            return ClassificationResults.empty()
+            return ClassificationResultsList()
         images_arr = []
 
         start_time = time.time()
@@ -111,7 +111,7 @@ class TFLegoClassifier(LegoClassifier):
         indices = [int(np.argmax(values)) for values in predictions]
         classes = [self.class_names[index] for index in indices]
         scores = [float(prediction[index]) for index, prediction in zip(indices, predictions)]
-        return ClassificationResults(classes, scores)
+        return ClassificationResultsList.from_lists(classes, scores)
 
 
 class DataSet:

@@ -3,14 +3,14 @@ from typing import List
 
 from PIL import Image
 
-from lego_sorter_server.analysis.classification.ClassificationResults import ClassificationResults
+from lego_sorter_server.analysis.classification.ClassificationResults import ClassificationResultsList
 
 
 class LegoClassifier:
     def __init__(self):
         self.class_names: List[str] = self.read_classes_from_file()
 
-    def predict(self, images: [Image.Image]) -> ClassificationResults:
+    def predict(self, images: [Image.Image]) -> ClassificationResultsList:
         pass
 
     def load_model(self):

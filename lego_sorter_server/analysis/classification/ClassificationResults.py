@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 CLASSIFICATION_SCORES_NAME = 'classification_scores'
 CLASSIFICATION_CLASSES_NAME = 'classification_classes'
@@ -9,8 +9,11 @@ class ClassificationResult:
         self.r_class: str = r_class
         self.r_score: float = r_score
 
+    def to_tuple(self) -> Tuple[float, str]:
+        return self.r_score, self.r_class
 
-class ClassificationResultsList(List):
+
+class ClassificationResultsList(List[ClassificationResult]):
     @classmethod
     def from_lists(cls, classes: List[str], scores: List[float]):
         assert len(classes) == len(scores)
@@ -31,21 +34,14 @@ class ClassificationResultsList(List):
             ]
         )
 
+    def to_dict(self):
+        return {
+            CLASSIFICATION_CLASSES_NAME: [x.r_class for x in self],
+            CLASSIFICATION_SCORES_NAME: [x.r_score for x in self]
+        }
 
-class ClassificationResults:
-    def __init__(self, classification_classes: List[str], classification_scores: List[float]):
-        self.classification_classes = classification_classes
-        self.classification_scores = classification_scores
+    def scores_to_list(self):
+        return [r.r_score for r in self]
 
-    @staticmethod
-    def from_dict(classification_results_dict):
-        return ClassificationResults(classification_results_dict['classification_classes'],
-                                     classification_results_dict['classification_scores'])
-
-    @staticmethod
-    def empty():
-        return ClassificationResults([], [])
-
-    def get_as_dict(self):
-        return {'classification_classes', self.classification_classes,
-                'classification_scores', self.classification_scores}
+    def class_to_list(self):
+        return [r.r_class for r in self]
