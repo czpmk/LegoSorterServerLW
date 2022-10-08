@@ -59,9 +59,9 @@ class DetectionBox:
 
 class DetectionResult:
     def __init__(self, detection_score: float, detection_class: str, detection_box: DetectionBox):
-        self.detection_score: float = detection_score
-        self.detection_class: str = detection_class
-        self.detection_box: DetectionBox = detection_box
+        self.d_score: float = detection_score
+        self.d_class: str = detection_class
+        self.d_box: DetectionBox = detection_box
 
     @classmethod
     def from_bounding_box(cls, bounding_box: BoundingBox):
@@ -72,9 +72,9 @@ class DetectionResult:
         )
 
     def to_bounding_box(self) -> BoundingBox:
-        bb = self.detection_box.to_bounding_box()
-        bb.score = self.detection_score
-        bb.label = self.detection_class
+        bb = self.d_box.to_bounding_box()
+        bb.score = self.d_score
+        bb.label = self.d_class
         return bb
 
 
@@ -106,10 +106,10 @@ class DetectionResultsList(List[DetectionResult]):
         )
 
     def scores_to_list(self):
-        return [r.detection_score for r in self]
+        return [r.d_score for r in self]
 
     def classes_to_list(self):
-        return [r.detection_class for r in self]
+        return [r.d_class for r in self]
 
     def boxes_to_list(self):
-        return [r.detection_box for r in self]
+        return [r.d_box for r in self]

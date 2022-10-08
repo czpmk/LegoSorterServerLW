@@ -57,7 +57,7 @@ class AnalysisService:
         detection_results = self.detect(image, threshold=detection_threshold,
                                         discard_border_results=discard_border_results)
 
-        cropped_images = [DetectionUtils.crop_with_margin_from_bb(image, res.detection_box) for res in
+        cropped_images = [DetectionUtils.crop_with_margin_from_bb(image, res.d_box) for res in
                           detection_results]
 
         classification_results = self.classify(cropped_images)
@@ -72,14 +72,14 @@ class AnalysisService:
         transformation: Callable[[int], int] = lambda coord: int(coord * detection_image_size * 1 / scale)
 
         for i in range(len(detection_results)):
-            detection_results[i].detection_box.transform(transformation)
+            detection_results[i].d_box.transform(transformation)
 
             # if y_max >= target_image_size[1] or x_max >= target_image_size[0]:
             #     continue
-            detection_results[i].detection_box.y_max = min(detection_results[i].detection_box.y_max,
-                                                           target_image_size[1])
-            detection_results[i].detection_box.x_max = min(detection_results[i].detection_box.x_max,
-                                                           target_image_size[0])
+            detection_results[i].d_box.y_max = min(detection_results[i].d_box.y_max,
+                                                   target_image_size[1])
+            detection_results[i].d_box.x_max = min(detection_results[i].d_box.x_max,
+                                                   target_image_size[0])
 
         return detection_results
 
@@ -87,7 +87,7 @@ class AnalysisService:
                                  accepted_xy_range) -> DetectionResultsList:
         limit = len(detection_results)
         for idx in range(len(detection_results)):
-            if detection_results[idx].detection_score < threshold:
+            if detection_results[idx].d_score < threshold:
                 limit = idx
                 break
 
@@ -100,7 +100,7 @@ class AnalysisService:
             filtered_by_detection_box: DetectionResultsList = DetectionResultsList()
 
             for idx in range(len(filtered_by_score)):
-                detection_box = detection_results[idx].detection_box
+                detection_box = detection_results[idx].d_box
 
                 if detection_box.y_min < self.BORDER_MARGIN_RELATIVE \
                         or detection_box.x_min < self.BORDER_MARGIN_RELATIVE \
@@ -109,9 +109,9 @@ class AnalysisService:
                     continue
 
                 filtered_by_detection_box.append(
-                    DetectionResult(filtered_by_score[idx].detection_score,
-                                    filtered_by_score[idx].detection_class,
-                                    detection_results[idx].detection_box)
+                    DetectionResult(filtered_by_score[idx].d_score,
+                                    filtered_by_score[idx].d_class,
+                                    detection_results[idx].d_box)
                 )
 
             if len(filtered_by_detection_box) != 0:

@@ -39,7 +39,7 @@ class ImageProtoUtils:
                                                classification_results: ClassificationResults) -> ListOfBoundingBoxes:
         bounding_boxes = []
         for idx in range(len(detection_results)):
-            if detection_results[idx].detection_score < 0.5:
+            if detection_results[idx].d_score < 0.5:
                 continue
 
             bb = detection_results[idx].to_bounding_box()

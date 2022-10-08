@@ -66,18 +66,18 @@ class LegoDetectionRunner:
         bbs = []
 
         for idx in range(len(detection_results)):
-            if detection_results[idx].detection_score < LegoDetectionRunner.DETECTION_SCORE_THRESHOLD:
+            if detection_results[idx].d_score < LegoDetectionRunner.DETECTION_SCORE_THRESHOLD:
                 logging.info(
                     f"[LegoDetectionRunner] One result discarded for {lego_class} as it is under the threshold:\n"
-                    f"Score = {detection_results[idx].detection_score}, "
-                    f"BoundingBox = {detection_results[idx].detection_box}")
+                    f"Score = {detection_results[idx].d_score}, "
+                    f"BoundingBox = {detection_results[idx].d_box}")
                 continue
 
             detected_counter += 1
-            bbs.append(detection_results[idx].detection_box)
+            bbs.append(detection_results[idx].d_box)
 
             if save_cropped_image is True:
-                image_new = crop_with_margin(image, *detection_results[idx].detection_box)
+                image_new = crop_with_margin(image, *detection_results[idx].d_box)
                 self.storage.save_image(image_new, lego_class, prefix)
 
         prefix = f'{detected_counter}_{prefix}'
