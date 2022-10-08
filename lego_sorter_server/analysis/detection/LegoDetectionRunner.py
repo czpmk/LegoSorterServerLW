@@ -31,7 +31,9 @@ class LegoDetectionRunner:
         self.executor.shutdown()
 
     @staticmethod
-    def _exception_handler(method, args=[]):
+    def _exception_handler(method, args=None):
+        if args is None:
+            args = []
         try:
             method(*args)
         except Exception as exc:
