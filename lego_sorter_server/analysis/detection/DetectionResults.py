@@ -1,6 +1,6 @@
 import copy
-from enum import Enum
 from typing import List, Tuple
+from lego_sorter_server.generated.Messages_pb2 import BoundingBox
 
 DETECTION_SCORES_NAME = 'detection_scores'
 DETECTION_CLASSES_NAME = 'detection_classes'
@@ -17,6 +17,15 @@ class DetectionBox:
     @classmethod
     def from_tuple(cls, coords: Tuple[int, int, int, int]):
         return cls(coords[0], coords[1], coords[2], coords[3])
+
+    @classmethod
+    def from_bounding_box(cls, bounding_box: BoundingBox):
+        return cls(
+            bounding_box.ymin,
+            bounding_box.xmin,
+            bounding_box.ymax,
+            bounding_box.xmax
+        )
 
     def transform(self, func):
         self.y_min = func(self.y_min)
@@ -42,12 +51,31 @@ class DetectionBox:
     def to_tuple(self) -> Tuple[int, int, int, int]:
         return self.x_min, self.y_min, self.x_max, self.y_max
 
+    def to_bounding_box(self) -> BoundingBox:
+        bb = BoundingBox()
+        bb.ymin, bb.xmin, bb.ymax, bb.xmax = self.y_min, self.x_min, self.y_max, self.x_max
+        return bb
+
 
 class DetectionResult:
     def __init__(self, detection_score: float, detection_class: str, detection_box: DetectionBox):
         self.detection_score: float = detection_score
         self.detection_class: str = detection_class
         self.detection_box: DetectionBox = detection_box
+
+    @classmethod
+    def from_bounding_box(cls, bounding_box: BoundingBox):
+        return cls(
+            bounding_box.score,
+            bounding_box.label,
+            DetectionBox.from_bounding_box(bounding_box)
+        )
+
+    def to_bounding_box(self) -> BoundingBox:
+        bb = self.detection_box.to_bounding_box()
+        bb.score = self.detection_score
+        bb.label = self.detection_class
+        return bb
 
 
 class DetectionResultsList(List[DetectionResult]):
@@ -76,3 +104,12 @@ class DetectionResultsList(List[DetectionResult]):
                 for idx in range(len(results_dict[DETECTION_SCORES_NAME]))
             ]
         )
+
+    def scores_to_list(self):
+        return [r.detection_score for r in self]
+
+    def classes_to_list(self):
+        return [r.detection_class for r in self]
+
+    def boxes_to_list(self):
+        return [r.detection_box for r in self]
