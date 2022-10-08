@@ -82,11 +82,11 @@ class TFLegoDetector(LegoDetector, metaclass=ThreadSafeSingleton):
 
         # TODO: remove '100' or 'len(detections)'
         for i in range(min(100, len(detections))):
-            if detections[i].detection_score < 0.5:
+            if detections[i].d_score < 0.5:
                 break  # IF SORTED
 
             detected_counter += 1
-            detection_box = detections[i].detection_box.copy()
+            detection_box = detections[i].d_box.copy()
             detection_box.transform(transformation)
 
             if detection_box.y_max >= height or detection_box.x_max >= width:
@@ -100,7 +100,7 @@ class TFLegoDetector(LegoDetector, metaclass=ThreadSafeSingleton):
     def discard_results_under_threshold(detections: DetectionResultsList,
                                         threshold: float = 0.1) -> DetectionResultsList:
         for idx in range(len(detections)):
-            if detections[idx].detection_score < threshold:
+            if detections[idx].d_score < threshold:
                 return DetectionResultsList[:idx]
 
         return DetectionResultsList[:1]
