@@ -95,6 +95,16 @@ class DetectionResultsList(List[DetectionResult]):
 
     @classmethod
     def from_dict(cls, results_dict: dict):
+        """Load DetectionResultsList object from dictionary
+            Expected dictionary format:
+                'detection_scores': List[float] scores
+                'detection_classes': List[str] classes
+                'detection_boxes': List[Tuple[int, int, int, int]] boxes
+
+            Expected dimensions order in Detection Boxes (y_min, x_min, y_max, x_max)
+
+            Rise an error if length of scores, classes and names are not the same
+        """
         assert len(results_dict[DETECTION_SCORES_NAME]) \
                == len(results_dict[DETECTION_CLASSES_NAME]) \
                == len(results_dict[DETECTION_BOXES_NAME])
@@ -109,10 +119,17 @@ class DetectionResultsList(List[DetectionResult]):
         )
 
     def scores_to_list(self):
+        """Returns List[float]"""
         return [r.d_score for r in self]
 
     def classes_to_list(self):
+        """Returns List[str]"""
         return [r.d_class for r in self]
 
     def boxes_to_list(self):
+        """Returns List[DetectionBox]"""
         return [r.d_box for r in self]
+
+    def sort_by_bounding_box(self):
+        """Sort Detection Results by bounding box position (descending order)"""
+        self.sort(key=lambda res: res.d_box.y_min, reverse=True)
