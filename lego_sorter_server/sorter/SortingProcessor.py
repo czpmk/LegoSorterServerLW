@@ -14,9 +14,9 @@ from lego_sorter_server.sorter.ordering.SimpleOrdering import SimpleOrdering
 
 
 class SortingProcessor:
-    def __init__(self, brickCategoryConfig: BrickCategoryConfig):
+    def __init__(self, brick_category_config: BrickCategoryConfig):
         self.analysis_service: AnalysisService = AnalysisService()
-        self.sorter_controller: LegoSorterController = LegoSorterController(brickCategoryConfig)
+        self.sorter_controller: LegoSorterController = LegoSorterController(brick_category_config)
         self.ordering: SimpleOrdering = SimpleOrdering()
         self.storage: LegoImageStorage = LegoImageStorage()
 
@@ -55,7 +55,7 @@ class SortingProcessor:
         logging.info(f"[SortingProcessor] Got the best result {best_result}. Returning the results...")
         self.sorter_controller.on_brick_recognized(best_result)
 
-    def _process(self, image: Image) -> List[Tuple]:
+    def _process(self, image: Image) -> DetectionResultsList:
         """
         Returns a list of recognized bricks ordered by the position on the belt - ymin desc
         """
@@ -64,7 +64,7 @@ class SortingProcessor:
 
         detected_count = len(detection_results)
         if detected_count == 0:
-            return []
+            return DetectionResultsList()
 
         logging.info(f"[SortingProcessor] Detected a lego brick, processing...")
 
@@ -77,8 +77,9 @@ class SortingProcessor:
             classification_results.class_to_list(),
             detection_results.boxes_to_list()
         )
+        results.sort_by_bounding_box()
 
-        return self.order_by_bounding_box_position(results)
+        return results
 
     def start_machine(self):
         self.sorter_controller.run_conveyor()
@@ -88,11 +89,6 @@ class SortingProcessor:
 
     def set_machine_speed(self, speed: int):
         self.sorter_controller.set_machine_speed(speed)
-
-    @staticmethod
-    def order_by_bounding_box_position(results: DetectionResultsList) -> DetectionResultsList:
-        # sort by ymin
-        return DetectionResultsList(sorted(results, key=lambda res: res.d_score, reverse=True))
 
     @staticmethod
     def get_best_result(results):
