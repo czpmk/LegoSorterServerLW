@@ -63,6 +63,9 @@ class DetectionResult:
         self.d_class: str = detection_class
         self.d_box: DetectionBox = detection_box
 
+    def __lt__(self, other):
+        return self.d_score < other.d_score
+
     @classmethod
     def from_bounding_box(cls, bounding_box: BoundingBox):
         return cls(
@@ -80,12 +83,12 @@ class DetectionResult:
 
 class DetectionResultsList(List[DetectionResult]):
     @classmethod
-    def from_lists(cls, scores: List[float], classes: List[str], boxes: List[Tuple[int, int, int, int]]):
+    def from_lists(cls, scores: List[float], classes: List[str], boxes: List[DetectionBox]):
         assert len(scores) == len(classes) == len(boxes)
 
         return cls(
             [
-                DetectionResult(scores[idx], classes[idx], DetectionBox.from_tuple(boxes[idx]))
+                DetectionResult(scores[idx], classes[idx], boxes[idx])
                 for idx in range(len(scores))
             ]
         )

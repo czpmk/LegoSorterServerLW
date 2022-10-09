@@ -6,6 +6,7 @@ from PIL.Image import Image
 
 from lego_sorter_server.analysis.AnalysisService import AnalysisService
 from lego_sorter_server.analysis.detection import DetectionUtils
+from lego_sorter_server.analysis.detection.DetectionResults import DetectionResultsList, DetectionResult
 from lego_sorter_server.images.storage.LegoImageStorage import LegoImageStorage
 from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
 from lego_sorter_server.sorter.LegoSorterController import LegoSorterController
@@ -58,9 +59,10 @@ class SortingProcessor:
         """
         Returns a list of recognized bricks ordered by the position on the belt - ymin desc
         """
-        results = self.analysis_service.detect_and_classify(image, detection_threshold=0.8)
+        detection_results, classification_results = self.analysis_service.detect_and_classify(image,
+                                                                                              detection_threshold=0.8)
 
-        detected_count = len(results[0].detection_classes)
+        detected_count = len(detection_results)
         if detected_count == 0:
             return []
 
@@ -70,11 +72,13 @@ class SortingProcessor:
             logging.warning(f"[SortingProcessor] More than one brick detected '(detected_count = {detected_count}), "
                             f"there should be only one brick on the tape at the same time.")
 
-        zipped_results = list(zip(results[0].detection_boxes,
-                                  results[1].classification_classes,
-                                  results[1].classification_scores))
+        results = DetectionResultsList.from_lists(
+            classification_results.scores_to_list(),
+            classification_results.class_to_list(),
+            detection_results.boxes_to_list()
+        )
 
-        return self.order_by_bounding_box_position(zipped_results)
+        return self.order_by_bounding_box_position(results)
 
     def start_machine(self):
         self.sorter_controller.run_conveyor()
@@ -86,9 +90,9 @@ class SortingProcessor:
         self.sorter_controller.set_machine_speed(speed)
 
     @staticmethod
-    def order_by_bounding_box_position(zipped_results: List[Tuple[Tuple, str, float]]) -> List[Tuple]:
+    def order_by_bounding_box_position(results: DetectionResultsList) -> DetectionResultsList:
         # sort by ymin
-        return sorted(zipped_results, key=lambda res: res[0][0], reverse=True)
+        return DetectionResultsList(sorted(results, key=lambda res: res.d_score, reverse=True))
 
     @staticmethod
     def get_best_result(results):

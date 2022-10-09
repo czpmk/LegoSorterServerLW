@@ -5,7 +5,7 @@ import numpy
 
 from PIL.Image import Image
 
-from lego_sorter_server.analysis.classification.ClassificationResults import ClassificationResults
+from lego_sorter_server.analysis.classification.ClassificationResults import ClassificationResultsList
 from lego_sorter_server.analysis.classification.LegoClassifierProvider import LegoClassifierProvider
 from lego_sorter_server.analysis.classification.classifiers.TFLegoClassifier import TFLegoClassifier
 from lego_sorter_server.analysis.detection import DetectionUtils
@@ -48,11 +48,11 @@ class AnalysisService:
                                                               original_size,
                                                               self.DEFAULT_IMAGE_DETECTION_SIZE[0])
 
-    def classify(self, images: List[Image]) -> ClassificationResults:
+    def classify(self, images: List[Image]) -> ClassificationResultsList:
         return self.classifier.predict(images)
 
     def detect_and_classify(self, image: Image, detection_threshold: float = 0.5, discard_border_results: bool = True) \
-            -> Tuple[DetectionResultsList, ClassificationResults]:
+            -> Tuple[DetectionResultsList, ClassificationResultsList]:
 
         detection_results = self.detect(image, threshold=detection_threshold,
                                         discard_border_results=discard_border_results)

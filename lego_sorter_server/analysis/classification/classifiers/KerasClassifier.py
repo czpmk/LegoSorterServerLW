@@ -10,7 +10,7 @@ from typing import List
 from tensorflow import keras
 from PIL.Image import Image
 
-from lego_sorter_server.analysis.classification.ClassificationResults import ClassificationResults
+from lego_sorter_server.analysis.classification.ClassificationResults import ClassificationResultsList
 from lego_sorter_server.analysis.classification.classifiers.LegoClassifier import LegoClassifier
 from lego_sorter_server.analysis.classification.toolkit.transformations.simple import Simple
 
@@ -32,12 +32,12 @@ class KerasClassifier(LegoClassifier):
         self.model = keras.models.load_model(self.model_path)
         self.initialized = True
 
-    def predict(self, images: List[Image]) -> ClassificationResults:
+    def predict(self, images: List[Image]) -> ClassificationResultsList:
         if not self.initialized:
             self.load_model()
 
         if len(images) == 0:
-            return ClassificationResults.empty()
+            return ClassificationResultsList()
 
         images_array = []
         start_time = time.time()
@@ -59,4 +59,4 @@ class KerasClassifier(LegoClassifier):
         classes = [self.class_names[index] for index in indices]
         scores = [float(prediction[index]) for index, prediction in zip(indices, predictions)]
 
-        return ClassificationResults(classes, scores)
+        return ClassificationResultsList.from_lists(classes, scores)

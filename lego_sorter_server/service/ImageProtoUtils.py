@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from PIL import Image
 
-from lego_sorter_server.analysis.classification.ClassificationResults import ClassificationResults
+from lego_sorter_server.analysis.classification.ClassificationResults import ClassificationResultsList
 from lego_sorter_server.analysis.detection import DetectionUtils
 from lego_sorter_server.analysis.detection.DetectionResults import DetectionBox, DetectionResultsList
 from lego_sorter_server.generated.Messages_pb2 import ImageRequest, BoundingBox, ListOfBoundingBoxes
@@ -36,15 +36,14 @@ class ImageProtoUtils:
 
     @staticmethod
     def prepare_response_from_analysis_results(detection_results: DetectionResultsList,
-                                               classification_results: ClassificationResults) -> ListOfBoundingBoxes:
+                                               classification_results: ClassificationResultsList) -> ListOfBoundingBoxes:
         bounding_boxes = []
         for idx in range(len(detection_results)):
             if detection_results[idx].d_score < 0.5:
                 continue
 
             bb = detection_results[idx].to_bounding_box()
-            bb.score = classification_results.classification_scores[idx]
-            bb.label = classification_results.classification_classes[idx]
+            bb.score, bb.label = classification_results[idx].to_tuple()
 
             bounding_boxes.append(bb)
 

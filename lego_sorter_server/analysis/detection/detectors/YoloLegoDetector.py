@@ -6,7 +6,7 @@ import torch
 import numpy
 from pathlib import Path
 
-from lego_sorter_server.analysis.detection.DetectionResults import DetectionResultsList
+from lego_sorter_server.analysis.detection.DetectionResults import DetectionResultsList, DetectionBox
 from lego_sorter_server.analysis.detection.detectors.LegoDetector import LegoDetector
 
 
@@ -57,9 +57,9 @@ class YoloLegoDetector(LegoDetector, metaclass=ThreadSafeSingleton):
         image_predictions = results.xyxyn[0].cpu().numpy()
         scores = image_predictions[:, 4]
         classes = image_predictions[:, 5].astype(numpy.int64) + 1
-        boxes = YoloLegoDetector.xyxy2yxyx_scaled(image_predictions[:, :4])
+        boxes = [DetectionBox.from_tuple(x) for x in YoloLegoDetector.xyxy2yxyx_scaled(image_predictions[:, :4])]
 
-        return DetectionResultsList.from_lists(scores, classes, [x for x in boxes])
+        return DetectionResultsList.from_lists(scores, classes, boxes)
 
     def detect_lego(self, image: numpy.ndarray) -> DetectionResultsList:
         if not self.__initialized:
