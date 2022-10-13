@@ -1,17 +1,17 @@
 import logging
-from typing import Tuple, List
+from typing import Tuple, List, Callable
 
 import numpy
 
 from PIL.Image import Image
 
-from lego_sorter_server.analysis.classification.ClassificationResults import ClassificationResults
 from lego_sorter_server.analysis.classification.LegoClassifierProvider import LegoClassifierProvider
 from lego_sorter_server.analysis.classification.classifiers.TFLegoClassifier import TFLegoClassifier
 from lego_sorter_server.analysis.detection import DetectionUtils
-from lego_sorter_server.analysis.detection.DetectionResults import DetectionResults
 from lego_sorter_server.analysis.detection.detectors.LegoDetector import LegoDetector
 from lego_sorter_server.analysis.detection.detectors.LegoDetectorProvider import LegoDetectorProvider
+from lego_sorter_server.common.ClassificationResults import ClassificationResultsList
+from lego_sorter_server.common.DetectionResults import DetectionResultsList
 
 
 class AnalysisService:
@@ -23,7 +23,7 @@ class AnalysisService:
         self.classifier = LegoClassifierProvider.get_default_classifier()
 
     def detect(self, image: Image, resize: bool = True, threshold=0.5,
-               discard_border_results: bool = True) -> DetectionResults:
+               discard_border_results: bool = True) -> DetectionResultsList:
         if image.size is not AnalysisService.DEFAULT_IMAGE_DETECTION_SIZE and resize is False:
             logging.warning(f"[AnalysisService] Requested detection on an image with a non-standard size {image.size} "
                             f"but 'resize' parameter is {resize}.")
@@ -48,18 +48,18 @@ class AnalysisService:
                                                               original_size,
                                                               self.DEFAULT_IMAGE_DETECTION_SIZE[0])
 
-    def classify(self, images: List[Image]) -> ClassificationResults:
+    def classify(self, images: List[Image]) -> ClassificationResultsList:
         return self.classifier.predict(images)
 
     def detect_and_classify(self, image: Image, detection_threshold: float = 0.5, discard_border_results: bool = True) \
-            -> Tuple[DetectionResults, ClassificationResults]:
+            -> Tuple[DetectionResultsList, ClassificationResultsList]:
 
         detection_results = self.detect(image, threshold=detection_threshold,
                                         discard_border_results=discard_border_results)
 
         cropped_images = []
-        for bounding_box in detection_results.detection_boxes:
-            cropped_image = DetectionUtils.crop_with_margin_from_bb(image, bounding_box)
+        for result in detection_results:
+            cropped_image = DetectionUtils.crop_with_margin_from_detection_box(image, result.detection_box)
             cropped_images.append(cropped_image)
 
         classification_results = self.classify(cropped_images)
@@ -67,54 +67,44 @@ class AnalysisService:
         return detection_results, classification_results
 
     @staticmethod
-    def translate_bounding_boxes_to_original_size(detection_results: DetectionResults,
+    def translate_bounding_boxes_to_original_size(detection_results: DetectionResultsList,
                                                   scale: float,
                                                   target_image_size: Tuple[int, int],  # (width, height)
-                                                  detection_image_size: int = 640) -> DetectionResults:
-        bbs = []
-        for i in range(len(detection_results.detection_classes)):
-            y_min, x_min, y_max, x_max = [int(coord * detection_image_size * 1 / scale) for coord in
-                                          detection_results.detection_boxes[i]]
+                                                  detection_image_size: int = 640) -> DetectionResultsList:
+        width, height = target_image_size[0], target_image_size[1]
+        transformation: Callable[[int], int] = lambda x: int(x * detection_image_size * 1 / scale)
+
+        for i in range(len(detection_results)):
+            detection_results[i].detection_box.transform(transformation)
 
             # if y_max >= target_image_size[1] or x_max >= target_image_size[0]:
             #     continue
-            y_max = min(y_max, target_image_size[1])
-            x_max = min(x_max, target_image_size[0])
+            detection_results[i].detection_box.y_max = min(detection_results[i].detection_box.y_max, height)
+            detection_results[i].detection_box.x_max = min(detection_results[i].detection_box.x_max, width)
 
-            bbs.append((y_min, x_min, y_max, x_max))
+        return detection_results
 
-        detection_results_translated = DetectionResults(detection_results.detection_scores,
-                                                        detection_results.detection_classes,
-                                                        bbs)
-        return detection_results_translated
-
-    def filter_detection_results(self, detection_results, threshold, accepted_xy_range):
-        limit = len(detection_results.detection_scores)
-        for index, score in enumerate(detection_results.detection_scores):
-            if score < threshold:
-                limit = index
+    def filter_detection_results(self, detection_results: DetectionResultsList, threshold: float,
+                                 accepted_xy_range) -> DetectionResultsList:
+        limit = len(detection_results)
+        for idx in range(len(detection_results)):
+            if detection_results[idx].detection_score < threshold:
+                limit = idx
                 break
 
-        filtered_results = DetectionResults(detection_results.detection_scores[:limit],
-                                            detection_results.detection_classes[:limit],
-                                            detection_results.detection_boxes[:limit])
-        if accepted_xy_range != [1, 1]:
-            results = []
-            for score, clazz, box in zip(filtered_results.detection_scores,
-                                         filtered_results.detection_classes,
-                                         detection_results.detection_boxes):
-                # (ymin, xmin, ymax, xmax)
-                if box[0] < self.BORDER_MARGIN_RELATIVE \
-                        or box[1] < self.BORDER_MARGIN_RELATIVE \
-                        or box[2] > accepted_xy_range[1] - self.BORDER_MARGIN_RELATIVE \
-                        or box[3] > accepted_xy_range[0] - self.BORDER_MARGIN_RELATIVE:
+        filtered_by_score: DetectionResultsList = detection_results[:limit]
+
+        if accepted_xy_range == [1, 1]:
+            return filtered_by_score
+        else:
+            # results = []
+            filtered_by_box = DetectionResultsList()
+            for res in filtered_by_score:
+                if res.detection_box.y_min < self.BORDER_MARGIN_RELATIVE \
+                        or res.detection_box.x_min < self.BORDER_MARGIN_RELATIVE \
+                        or res.detection_box.y_max > accepted_xy_range[1] - self.BORDER_MARGIN_RELATIVE \
+                        or res.detection_box.x_max > accepted_xy_range[0] - self.BORDER_MARGIN_RELATIVE:
                     continue
-                results.append([score, clazz, box])
+                filtered_by_box.append(res)
 
-            if len(results) != 0:
-                results = numpy.stack(results)
-                filtered_results = DetectionResults(results[:, 0], results[:, 1], results[:, 2])
-            else:
-                filtered_results = DetectionResults([], [], [])
-
-        return filtered_results
+            return filtered_by_box

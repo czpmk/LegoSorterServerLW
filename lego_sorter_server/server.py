@@ -12,10 +12,10 @@ from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
 class Server:
 
     @staticmethod
-    def run(sorterConfig: BrickCategoryConfig):
+    def run(sorter_config: BrickCategoryConfig):
         options = [('grpc.max_receive_message_length', 100 * 1024 * 1024)]
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=16), options=options)
-        LegoSorter_pb2_grpc.add_LegoSorterServicer_to_server(LegoSorterService(sorterConfig), server)
+        LegoSorter_pb2_grpc.add_LegoSorterServicer_to_server(LegoSorterService(sorter_config), server)
         LegoCapture_pb2_grpc.add_LegoCaptureServicer_to_server(LegoCaptureService(), server)
         LegoAnalysis_pb2_grpc.add_LegoAnalysisServicer_to_server(LegoAnalysisService(), server)
         server.add_insecure_port('[::]:50051')

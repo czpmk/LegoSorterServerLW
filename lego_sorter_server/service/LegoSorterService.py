@@ -12,8 +12,8 @@ from lego_sorter_server.sorter.SortingProcessor import SortingProcessor
 
 class LegoSorterService(LegoSorter_pb2_grpc.LegoSorterServicer):
 
-    def __init__(self, brickCategoryConfig: BrickCategoryConfig):
-        self.sortingProcessor = SortingProcessor(brickCategoryConfig)
+    def __init__(self, brick_category_config: BrickCategoryConfig):
+        self.sortingProcessor = SortingProcessor(brick_category_config)
 
     def processNextImage(self, request: ImageRequest, context) -> ListOfBoundingBoxesWithIndexes:
         start_time = time.time()

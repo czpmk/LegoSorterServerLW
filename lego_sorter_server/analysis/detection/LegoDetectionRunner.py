@@ -7,6 +7,7 @@ from concurrent import futures
 from lego_sorter_server.analysis.AnalysisService import AnalysisService
 from lego_sorter_server.analysis.detection.DetectionUtils import crop_with_margin
 from lego_sorter_server.analysis.detection.LegoLabeler import LegoLabeler
+from lego_sorter_server.common.DetectionResults import DetectionResultsList
 from lego_sorter_server.images.queue.ImageProcessingQueue import ImageProcessingQueue, CAPTURE_TAG
 from lego_sorter_server.images.storage.LegoImageStorage import LegoImageStorage
 
@@ -59,22 +60,22 @@ class LegoDetectionRunner:
     def __process_next_image(self, save_cropped_image, save_label_file):
         image, lego_class = self.queue.next(CAPTURE_TAG)
         prefix = self._get_random_hash() + "_"
-        detection_results = self.analysis_service.detect(image)
+        detection_results: DetectionResultsList = self.analysis_service.detect(image)
         detected_counter = 0
-        bbs = []
-        for i in range(len(detection_results.detection_classes)):
-            if detection_results.detection_scores[i] < LegoDetectionRunner.DETECTION_SCORE_THRESHOLD:
+        detection_boxes = []
+        for i in range(len(detection_results)):
+            if detection_results[i].detection_score < LegoDetectionRunner.DETECTION_SCORE_THRESHOLD:
                 logging.info(
                     f"[LegoDetectionRunner] One result discarded for {lego_class} as it is under the threshold:\n"
-                    f"Score = {detection_results.detection_scores[i]}, "
-                    f"BoundingBox = {detection_results.detection_boxes[i]}")
+                    f"Score = {detection_results[i].detection_score}, "
+                    f"BoundingBox = {detection_results[i].detection_box}")
                 continue
 
             detected_counter += 1
-            bbs.append(detection_results.detection_boxes[i])
+            detection_boxes.append(detection_results[i].detection_box)
 
             if save_cropped_image is True:
-                image_new = crop_with_margin(image, *detection_results.detection_boxes[i])
+                image_new = crop_with_margin(image, detection_results[i].detection_box)
                 self.storage.save_image(image_new, lego_class, prefix)
 
         prefix = f'{detected_counter}_{prefix}'
@@ -83,7 +84,7 @@ class LegoDetectionRunner:
         if save_label_file is True:
             path = self.storage.find_image_path(filename)
             width, height = image.size
-            label_file = LegoLabeler().to_label_file(filename, str(path), width, height, bbs)
+            label_file = LegoLabeler().to_label_file(filename, str(path), width, height, detection_boxes)
             xml_path = path.parent.absolute() / (filename.split(".")[-2] + ".xml")
             with open(xml_path, "w") as label_xml:
                 label_xml.write(label_file)

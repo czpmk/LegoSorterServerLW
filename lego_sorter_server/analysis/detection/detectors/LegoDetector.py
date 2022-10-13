@@ -1,8 +1,8 @@
 import numpy
 
-from lego_sorter_server.analysis.detection.DetectionResults import DetectionResults
+from lego_sorter_server.common.DetectionResults import DetectionResultsList
 
 
 class LegoDetector:
-    def detect_lego(self, image: numpy.ndarray) -> DetectionResults:
+    def detect_lego(self, image: numpy.ndarray) -> DetectionResultsList:
         pass

@@ -1,9 +1,14 @@
+from typing import List
+
+from lego_sorter_server.common.DetectionResults import DetectionBox
+
+
 class LegoLabeler:
 
-    def to_label_file(self, filename, path, image_width, image_height, bbs_yxyx_array):
+    def to_label_file(self, filename, path, image_width, image_height, detection_boxes: List[DetectionBox]):
         objects = ""
-        for coord in bbs_yxyx_array:
-            objects += self.get_object(*coord)
+        for db in detection_boxes:
+            objects += self.get_object(*db.to_tuple())
 
         return f"""<annotation>
                 <folder>images</folder>
