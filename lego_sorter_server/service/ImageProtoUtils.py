@@ -3,9 +3,9 @@ from typing import List, Tuple
 
 from PIL import Image
 
-from lego_sorter_server.analysis.classification.ClassificationResults import ClassificationResultsList
+from lego_sorter_server.analysis.classification.ClassificationResults import ClassificationResults
 from lego_sorter_server.analysis.detection import DetectionUtils
-from lego_sorter_server.analysis.detection.DetectionResults import DetectionBox, DetectionResultsList
+from lego_sorter_server.analysis.detection.DetectionResults import DetectionResults
 from lego_sorter_server.generated.Messages_pb2 import ImageRequest, BoundingBox, ListOfBoundingBoxes
 
 
@@ -28,23 +28,28 @@ class ImageProtoUtils:
 
     @staticmethod
     def crop_bounding_boxes(image: Image.Image, bbs: List[BoundingBox]) -> List[Tuple[BoundingBox, Image.Image]]:
-        bbs_with_blobs = [
-            (bb, DetectionUtils.crop_with_margin(image, DetectionBox.from_bounding_box(bb))) for bb in bbs
-        ]
+        bbs_with_blobs = []
+
+        for bb in bbs:
+            cropped_brick = DetectionUtils.crop_with_margin(image, bb.ymin, bb.xmin, bb.ymax, bb.xmax)
+            bbs_with_blobs.append((bb, cropped_brick))
 
         return bbs_with_blobs
 
     @staticmethod
-    def prepare_response_from_analysis_results(detection_results: DetectionResultsList,
-                                               classification_results: ClassificationResultsList) -> ListOfBoundingBoxes:
+    def prepare_response_from_analysis_results(detection_results: DetectionResults,
+                                               classification_results: ClassificationResults) -> ListOfBoundingBoxes:
+
         bounding_boxes = []
-        for idx in range(len(detection_results)):
-            if detection_results[idx].d_score < 0.5:
+        for i in range(len(detection_results.detection_boxes)):
+            if detection_results.detection_scores[i] < 0.5:
                 continue
 
-            bb = detection_results[idx].to_bounding_box()
-            bb.score, bb.label = classification_results[idx].to_tuple()
+            bb = BoundingBox()
 
+            bb.ymin, bb.xmin, bb.ymax, bb.xmax = [int(coord) for coord in detection_results.detection_boxes[i]]
+            bb.score = classification_results.classification_scores[i]
+            bb.label = classification_results.classification_classes[i]
             bounding_boxes.append(bb)
 
         bb_list = ListOfBoundingBoxes()
@@ -53,18 +58,20 @@ class ImageProtoUtils:
         return bb_list
 
     @staticmethod
-    def prepare_bbs_response_from_detection_results(detection_results: DetectionResultsList) -> ListOfBoundingBoxes:
-        bounding_boxes = []
-        for idx in range(len(detection_results)):
-            if detection_results[idx].detection_scores < 0.5:
+    def prepare_bbs_response_from_detection_results(detection_results: DetectionResults) -> ListOfBoundingBoxes:
+        bbs = []
+        for i in range(len(detection_results.detection_classes)):
+            if detection_results.detection_scores[i] < 0.5:
                 continue
 
-            bb = detection_results[idx].to_bounding_box()
-            bb.label = ImageProtoUtils.DEFAULT_LABEL
+            bb = BoundingBox()
 
-            bounding_boxes.append(bb)
+            bb.ymin, bb.xmin, bb.ymax, bb.xmax = [int(coord) for coord in detection_results.detection_boxes[i]]
+            bb.score = detection_results.detection_scores[i]
+            bb.label = ImageProtoUtils.DEFAULT_LABEL
+            bbs.append(bb)
 
         bb_list = ListOfBoundingBoxes()
-        bb_list.packet.extend(bounding_boxes)
+        bb_list.packet.extend(bbs)
 
         return bb_list

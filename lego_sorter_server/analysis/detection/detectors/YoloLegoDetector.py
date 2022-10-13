@@ -6,7 +6,7 @@ import torch
 import numpy
 from pathlib import Path
 
-from lego_sorter_server.analysis.detection.DetectionResults import DetectionResultsList, DetectionBox
+from lego_sorter_server.analysis.detection.DetectionResults import DetectionResults
 from lego_sorter_server.analysis.detection.detectors.LegoDetector import LegoDetector
 
 
@@ -53,15 +53,15 @@ class YoloLegoDetector(LegoDetector, metaclass=ThreadSafeSingleton):
         return numpy.array([[coord[1], coord[0], coord[3], coord[2]] for coord in xyxy])
 
     @staticmethod
-    def convert_results_to_common_format(results) -> DetectionResultsList:
+    def convert_results_to_common_format(results) -> DetectionResults:
         image_predictions = results.xyxyn[0].cpu().numpy()
         scores = image_predictions[:, 4]
         classes = image_predictions[:, 5].astype(numpy.int64) + 1
-        boxes = [DetectionBox.from_tuple(x) for x in YoloLegoDetector.xyxy2yxyx_scaled(image_predictions[:, :4])]
+        boxes = YoloLegoDetector.xyxy2yxyx_scaled(image_predictions[:, :4])
 
-        return DetectionResultsList.from_lists(scores, classes, boxes)
+        return DetectionResults(detection_scores=scores, detection_classes=classes, detection_boxes=boxes)
 
-    def detect_lego(self, image: numpy.ndarray) -> DetectionResultsList:
+    def detect_lego(self, image: numpy.ndarray) -> DetectionResults:
         if not self.__initialized:
             logging.info("YoloLegoDetector is not initialized, this process can take a few seconds for the first time.")
             self.__initialize__()
