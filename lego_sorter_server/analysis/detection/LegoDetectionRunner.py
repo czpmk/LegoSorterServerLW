@@ -31,9 +31,7 @@ class LegoDetectionRunner:
         self.executor.shutdown()
 
     @staticmethod
-    def _exception_handler(method, args=None):
-        if args is None:
-            args = []
+    def _exception_handler(method, args=[]):
         try:
             method(*args)
         except Exception as exc:
@@ -64,20 +62,19 @@ class LegoDetectionRunner:
         detection_results = self.analysis_service.detect(image)
         detected_counter = 0
         bbs = []
-
-        for idx in range(len(detection_results)):
-            if detection_results[idx].d_score < LegoDetectionRunner.DETECTION_SCORE_THRESHOLD:
+        for i in range(len(detection_results.detection_classes)):
+            if detection_results.detection_scores[i] < LegoDetectionRunner.DETECTION_SCORE_THRESHOLD:
                 logging.info(
                     f"[LegoDetectionRunner] One result discarded for {lego_class} as it is under the threshold:\n"
-                    f"Score = {detection_results[idx].d_score}, "
-                    f"BoundingBox = {detection_results[idx].d_box}")
+                    f"Score = {detection_results.detection_scores[i]}, "
+                    f"BoundingBox = {detection_results.detection_boxes[i]}")
                 continue
 
             detected_counter += 1
-            bbs.append(detection_results[idx].d_box)
+            bbs.append(detection_results.detection_boxes[i])
 
             if save_cropped_image is True:
-                image_new = crop_with_margin(image, *detection_results[idx].d_box)
+                image_new = crop_with_margin(image, *detection_results.detection_boxes[i])
                 self.storage.save_image(image_new, lego_class, prefix)
 
         prefix = f'{detected_counter}_{prefix}'
