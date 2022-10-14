@@ -8,6 +8,8 @@ from lego_sorter_server.analysis.detection.detectors.YoloLegoDetector import Yol
 # physical_devices = tf.config.list_physical_devices('GPU')
 # tf.config.experimental.set_memory_growth(physical_devices[0], True)
 # lego_detector = TFLegoDetector(model_path='./models/tf_model/saved_model')
+from lego_sorter_server.common.DetectionResults import DetectionResultsList
+
 lego_detector = YoloLegoDetector(model_path='./models/yolo_model/yolov5_small.pt')
 
 
@@ -17,14 +19,14 @@ def draw_bounding_boxes_on_image(image_path):
     im = im.resize((640, 640), 0)
     image = np.array(im)
 
-    detections = lego_detector.detect_lego(image)
+    detections: DetectionResultsList = lego_detector.detect_lego(image)
     category_index = {1: {'id': 1, 'name': 'lego'}}
 
     viz_utils.visualize_boxes_and_labels_on_image_array(
         image,
-        detections.detection_boxes,
-        detections.detection_classes,
-        detections.detection_scores,
+        detections.to_list_of_boxes_as_tuples(),
+        detections.to_list_of_classes(),
+        detections.to_list_of_scores(),
         category_index,
         use_normalized_coordinates=True,
         max_boxes_to_draw=200,

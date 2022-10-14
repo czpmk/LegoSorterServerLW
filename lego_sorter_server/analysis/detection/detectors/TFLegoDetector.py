@@ -1,16 +1,18 @@
 import os
 import threading
 import time
+from typing import Callable
+
 import numpy as np
 import tensorflow as tf
 import logging
 from pathlib import Path
 
 from lego_sorter_server.analysis.detection import DetectionUtils
-from lego_sorter_server.analysis.detection.DetectionResults import DetectionResults
 from lego_sorter_server.analysis.detection.DetectionUtils import crop_with_margin
 
 from lego_sorter_server.analysis.detection.detectors.LegoDetector import LegoDetector
+from lego_sorter_server.common.DetectionResults import DetectionResultsList
 
 
 class ThreadSafeSingleton(type):
@@ -53,7 +55,7 @@ class TFLegoDetector(LegoDetector, metaclass=ThreadSafeSingleton):
         logging.info("Loading model took {} seconds".format(elapsed_time))
         self.__initialized = True
 
-    def detect_lego(self, image: np.array) -> DetectionResults:
+    def detect_lego(self, image: np.array) -> DetectionResultsList:
         if not self.__initialized:
             logging.info("TFLegoDetector is not initialized, this process can take a few seconds for the first time.")
             self.__initialize__()
@@ -66,9 +68,9 @@ class TFLegoDetector(LegoDetector, metaclass=ThreadSafeSingleton):
         # detection_classes should be ints.
         detections['detection_classes'] = detections['detection_classes'].astype(np.int64)
 
-        detections = self.discard_results_under_threshold(detections)
+        detections_list = DetectionResultsList.from_dict(detections)
 
-        return DetectionResults.from_dict(detections)
+        return self.discard_results_under_threshold(detections_list)
 
     def detect_and_crop(self, image):
         width, height = image.size
@@ -76,32 +78,32 @@ class TFLegoDetector(LegoDetector, metaclass=ThreadSafeSingleton):
         detections = self.detect_lego(np.array(image_resized))
         detected_counter = 0
         new_images = []
-        for i in range(100):
-            if detections.detection_scores[i] < 0.5:
+
+        transformation: Callable[[int], int] = lambda x: int(x * 640 * 1 / scale)
+
+        for i in range(min(100, len(detections))):
+            if detections[i].detection_score < 0.5:
                 break  # IF SORTED
 
             detected_counter += 1
-            ymin, xmin, ymax, xmax = [int(i * 640 * 1 / scale) for i in detections.detection_boxes[i]]
+            db = detections[i].detection_box.copy()
+            db.transform(transformation)
 
             # if bb is out of bounds
-            if ymax >= height or xmax >= width:
+            if db.y_max >= height or db.x_max >= width:
                 continue
 
-            new_images += [crop_with_margin(image, ymin, xmin, ymax, xmax)]
+            new_images += [crop_with_margin(image, db)]
 
         return new_images
 
     @staticmethod
-    def discard_results_under_threshold(detections, threshold=0.1):
+    def discard_results_under_threshold(detections: DetectionResultsList, threshold=0.1) -> DetectionResultsList:
         limit = 1
 
-        for index, score in enumerate(detections['detection_scores']):
-            if score < threshold:
-                limit = index
+        for idx in range(len(detections)):
+            if detections[idx].detection_score < threshold:
+                limit = idx
                 break
 
-        return {
-            "detection_scores": detections["detection_scores"][:limit],
-            "detection_classes": detections["detection_classes"][:limit],
-            "detection_boxes": detections["detection_boxes"][:limit]
-        }
+        return detections[:limit]
