@@ -3,7 +3,7 @@ from typing import List
 
 from PIL import Image
 
-from lego_sorter_server.analysis.classification.ClassificationResults import ClassificationResultsList
+from lego_sorter_server.common.ClassificationResults import ClassificationResultsList
 
 
 class LegoClassifier:

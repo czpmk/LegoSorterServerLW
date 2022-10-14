@@ -9,10 +9,10 @@ import logging
 from pathlib import Path
 
 from lego_sorter_server.analysis.detection import DetectionUtils
-from lego_sorter_server.analysis.detection.DetectionResults import DetectionResultsList
 from lego_sorter_server.analysis.detection.DetectionUtils import crop_with_margin
 
 from lego_sorter_server.analysis.detection.detectors.LegoDetector import LegoDetector
+from lego_sorter_server.common.DetectionResults import DetectionResultsList
 
 
 class ThreadSafeSingleton(type):
@@ -68,9 +68,9 @@ class TFLegoDetector(LegoDetector, metaclass=ThreadSafeSingleton):
         # detection_classes should be ints.
         detections['detection_classes'] = detections['detection_classes'].astype(np.int64)
 
-        detections = DetectionResultsList.from_dict(detections)
+        detections_list = DetectionResultsList.from_dict(detections)
 
-        return self.discard_results_under_threshold(detections)
+        return self.discard_results_under_threshold(detections_list)
 
     def detect_and_crop(self, image):
         width, height = image.size
@@ -78,29 +78,32 @@ class TFLegoDetector(LegoDetector, metaclass=ThreadSafeSingleton):
         detections = self.detect_lego(np.array(image_resized))
         detected_counter = 0
         new_images = []
-        transformation: Callable[[int], int] = lambda x: int(x * 640 / scale)
 
-        # TODO: remove '100' or 'len(detections)'
+        transformation: Callable[[int], int] = lambda x: int(x * 640 * 1 / scale)
+
         for i in range(min(100, len(detections))):
-            if detections[i].d_score < 0.5:
+            if detections[i].detection_score < 0.5:
                 break  # IF SORTED
 
             detected_counter += 1
-            detection_box = detections[i].d_box.copy()
-            detection_box.transform(transformation)
+            db = detections[i].detection_box.copy()
+            db.transform(transformation)
 
-            if detection_box.y_max >= height or detection_box.x_max >= width:
+            # if bb is out of bounds
+            if db.y_max >= height or db.x_max >= width:
                 continue
 
-            new_images += [crop_with_margin(image, detection_box)]
+            new_images += [crop_with_margin(image, db)]
 
         return new_images
 
     @staticmethod
-    def discard_results_under_threshold(detections: DetectionResultsList,
-                                        threshold: float = 0.1) -> DetectionResultsList:
-        for idx in range(len(detections)):
-            if detections[idx].d_score < threshold:
-                return DetectionResultsList[:idx]
+    def discard_results_under_threshold(detections: DetectionResultsList, threshold=0.1) -> DetectionResultsList:
+        limit = 1
 
-        return DetectionResultsList[:1]
+        for idx in range(len(detections)):
+            if detections[idx].detection_score < threshold:
+                limit = idx
+                break
+
+        return detections[:limit]

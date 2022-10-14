@@ -10,9 +10,9 @@ from typing import List
 from tensorflow import keras
 from PIL.Image import Image
 
-from lego_sorter_server.analysis.classification.ClassificationResults import ClassificationResultsList
 from lego_sorter_server.analysis.classification.classifiers.LegoClassifier import LegoClassifier
 from lego_sorter_server.analysis.classification.toolkit.transformations.simple import Simple
+from lego_sorter_server.common.ClassificationResults import ClassificationResultsList
 
 gpus = tf.config.list_physical_devices('GPU')
 for gpu in gpus:
@@ -52,11 +52,12 @@ class KerasClassifier(LegoClassifier):
 
         predicting_elapsed_time_ms = 1000 * (time.time() - start_time) - processing_elapsed_time_ms
 
-        logging.info(f"[KerasClassifier] Preparing images took {processing_elapsed_time_ms} ms, "
-                     f"when predicting took {predicting_elapsed_time_ms} ms.")
+        logging.info("[KerasClassifier] Preparing images took {:.3f} ms, "
+                     "when predicting took {:.3f} ms.".format(processing_elapsed_time_ms,
+                                                              predicting_elapsed_time_ms))
 
         indices = [int(np.argmax(values)) for values in predictions]
         classes = [self.class_names[index] for index in indices]
         scores = [float(prediction[index]) for index, prediction in zip(indices, predictions)]
 
-        return ClassificationResultsList.from_lists(classes, scores)
+        return ClassificationResultsList.from_lists(classification_classes=classes, classification_scores=scores)

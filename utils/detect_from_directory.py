@@ -29,19 +29,23 @@ def process_images_in_path(input_path: Path, output_path: Path, analysis_service
             dest_path_img = output_path / file.name
             dest_path_xml = output_path / xml_name
             image = Image.open(file)
-            detection_results = analysis_service.detect(image, threshold=0.3, discard_border_results=True)
+            detection_boxes = analysis_service.detect(image, threshold=0.3,
+                                                      discard_border_results=True).to_list_of_boxes()
             width, height = image.size
+
             if not skip_xml:
-                label_file = labeler.to_label_file(file.name, dest_path_xml, width, height, detection_results.detection_boxes)
+                label_file = labeler.to_label_file(file.name, dest_path_xml, width, height, detection_boxes)
                 with open(dest_path_xml, "w") as label_xml:
                     label_xml.write(label_file)
+
             if not skip_images:
                 image.save(dest_path_img)
-            if save_cropped is True and len(detection_results.detection_boxes) > 0:
+
+            if save_cropped is True and len(detection_boxes) > 0:
                 output_cropped.mkdir(exist_ok=True, parents=True)
-                for i in range(len(detection_results.detection_boxes)):
+                for i in range(len(detection_boxes)):
                     cropped_image_path = output_cropped / f"c{i}_{file.name}"
-                    image_cropped = DetectionUtils.crop_with_margin(image, *detection_results.detection_boxes[i])
+                    image_cropped = DetectionUtils.crop_with_margin(image, detection_boxes[i])
                     image_cropped.save(cropped_image_path)
 
             counter += 1
@@ -72,9 +76,12 @@ def process_recursive(input_path: Path,
     for directory in dirs_to_process:
         sub_out_path = (output_path / directory.name)
         sub_out_cropped_path = (output_cropped / directory.name)
-        futures += process_recursive(directory, sub_out_path, executor, analysis_service, skip_images, save_cropped, sub_out_cropped_path, skip_xml)
+        futures += process_recursive(directory, sub_out_path, executor, analysis_service, skip_images, save_cropped,
+                                     sub_out_cropped_path, skip_xml)
 
-    futures.append(executor.submit(process_images_in_path, input_path, output_path, analysis_service, skip_images, save_cropped, output_cropped, skip_xml))
+    futures.append(
+        executor.submit(process_images_in_path, input_path, output_path, analysis_service, skip_images, save_cropped,
+                        output_cropped, skip_xml))
     return futures
 
 

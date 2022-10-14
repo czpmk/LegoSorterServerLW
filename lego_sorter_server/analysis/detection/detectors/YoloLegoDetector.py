@@ -6,8 +6,8 @@ import torch
 import numpy
 from pathlib import Path
 
-from lego_sorter_server.analysis.detection.DetectionResults import DetectionResultsList, DetectionBox
 from lego_sorter_server.analysis.detection.detectors.LegoDetector import LegoDetector
+from lego_sorter_server.common.DetectionResults import DetectionResultsList, DetectionBox
 
 
 class ThreadSafeSingleton(type):
@@ -57,9 +57,13 @@ class YoloLegoDetector(LegoDetector, metaclass=ThreadSafeSingleton):
         image_predictions = results.xyxyn[0].cpu().numpy()
         scores = image_predictions[:, 4]
         classes = image_predictions[:, 5].astype(numpy.int64) + 1
-        boxes = [DetectionBox.from_tuple(x) for x in YoloLegoDetector.xyxy2yxyx_scaled(image_predictions[:, :4])]
+        boxes = YoloLegoDetector.xyxy2yxyx_scaled(image_predictions[:, :4])
 
-        return DetectionResultsList.from_lists(scores, classes, boxes)
+        return DetectionResultsList.from_lists(
+            detection_scores=scores,
+            detection_classes=classes,
+            detection_boxes=[DetectionBox.from_tuple(x) for x in boxes]
+        )
 
     def detect_lego(self, image: numpy.ndarray) -> DetectionResultsList:
         if not self.__initialized:
@@ -70,6 +74,6 @@ class YoloLegoDetector(LegoDetector, metaclass=ThreadSafeSingleton):
         start_time = time.time()
         results = self.model([image], size=image.shape[0])
         elapsed_time = 1000 * (time.time() - start_time)
-        logging.info(f"[YoloLegoDetector][detect_lego] Detecting bricks took {elapsed_time} milliseconds")
+        logging.info("[YoloLegoDetector][detect_lego] Detecting bricks took {:.3f} milliseconds".format(elapsed_time))
 
         return self.convert_results_to_common_format(results)

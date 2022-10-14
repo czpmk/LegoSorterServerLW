@@ -16,12 +16,12 @@ from pathlib import Path
 
 # from models.models import *
 # from lego_sorter_server.analysis.classification.models.inceptionClear import InceptionClear
-from lego_sorter_server.analysis.classification.ClassificationResults import ClassificationResultsList
 from lego_sorter_server.analysis.classification.classifiers.LegoClassifier import LegoClassifier
 from lego_sorter_server.analysis.classification.toolkit.transformations.simple import Simple
 
 # physical_devices = tf.config.list_physical_devices('GPU')
 # tf.config.experimental.set_memory_growth(physical_devices[0], True)
+from lego_sorter_server.common.ClassificationResults import ClassificationResultsList
 
 gpus = tf.config.list_physical_devices('GPU')
 for gpu in gpus:
@@ -80,9 +80,6 @@ class TFLegoClassifier(LegoClassifier):
     def save_model(self, path):
         self.model.save(path)
 
-    def predict_single(self, image: Image.Image) -> ClassificationResultsList:
-        return self.predict([image])
-
     def predict(self, images: [Image.Image]) -> ClassificationResultsList:
         if not images:
             return ClassificationResultsList()
@@ -111,7 +108,10 @@ class TFLegoClassifier(LegoClassifier):
         indices = [int(np.argmax(values)) for values in predictions]
         classes = [self.class_names[index] for index in indices]
         scores = [float(prediction[index]) for index, prediction in zip(indices, predictions)]
-        return ClassificationResultsList.from_lists(classes, scores)
+        return ClassificationResultsList.from_lists(
+            classification_classes=classes,
+            classification_scores=scores
+        )
 
 
 class DataSet:

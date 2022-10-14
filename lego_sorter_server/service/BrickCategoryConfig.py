@@ -15,7 +15,8 @@ class BrickCategoryConfig:
                 cat_positions[cat] = json_config[cat]["position"]
                 new_bricks = {brick: cat for brick in json_config[cat]["bricks"]}
                 if len(new_bricks.keys() & brick_cat_mapping.keys()) != 0:
-                    raise RuntimeError(F"Following bricks are redefined in category {cat}: {new_bricks.keys() & brick_cat_mapping.keys()}")
+                    raise RuntimeError(
+                        F"Following bricks are redefined in category {cat}: {new_bricks.keys() & brick_cat_mapping.keys()}")
                 brick_cat_mapping = {**brick_cat_mapping, **new_bricks}
         return brick_cat_mapping, cat_positions
 

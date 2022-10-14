@@ -1,6 +1,6 @@
 import numpy
 
-from lego_sorter_server.analysis.detection.DetectionResults import DetectionResultsList
+from lego_sorter_server.common.DetectionResults import DetectionResultsList
 
 
 class LegoDetector:

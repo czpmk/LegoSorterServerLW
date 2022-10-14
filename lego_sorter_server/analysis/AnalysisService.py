@@ -5,13 +5,13 @@ import numpy
 
 from PIL.Image import Image
 
-from lego_sorter_server.analysis.classification.ClassificationResults import ClassificationResultsList
 from lego_sorter_server.analysis.classification.LegoClassifierProvider import LegoClassifierProvider
 from lego_sorter_server.analysis.classification.classifiers.TFLegoClassifier import TFLegoClassifier
 from lego_sorter_server.analysis.detection import DetectionUtils
-from lego_sorter_server.analysis.detection.DetectionResults import DetectionBox, DetectionResult, DetectionResultsList
 from lego_sorter_server.analysis.detection.detectors.LegoDetector import LegoDetector
 from lego_sorter_server.analysis.detection.detectors.LegoDetectorProvider import LegoDetectorProvider
+from lego_sorter_server.common.ClassificationResults import ClassificationResultsList
+from lego_sorter_server.common.DetectionResults import DetectionResultsList
 
 
 class AnalysisService:
@@ -57,8 +57,10 @@ class AnalysisService:
         detection_results = self.detect(image, threshold=detection_threshold,
                                         discard_border_results=discard_border_results)
 
-        cropped_images = [DetectionUtils.crop_with_margin_from_bb(image, res.d_box) for res in
-                          detection_results]
+        cropped_images = []
+        for result in detection_results:
+            cropped_image = DetectionUtils.crop_with_margin_from_detection_box(image, result.detection_box)
+            cropped_images.append(cropped_image)
 
         classification_results = self.classify(cropped_images)
 
@@ -69,25 +71,24 @@ class AnalysisService:
                                                   scale: float,
                                                   target_image_size: Tuple[int, int],  # (width, height)
                                                   detection_image_size: int = 640) -> DetectionResultsList:
-        transformation: Callable[[int], int] = lambda coord: int(coord * detection_image_size * 1 / scale)
+        width, height = target_image_size[0], target_image_size[1]
+        transformation: Callable[[int], int] = lambda x: int(x * detection_image_size * 1 / scale)
 
         for i in range(len(detection_results)):
-            detection_results[i].d_box.transform(transformation)
+            detection_results[i].detection_box.transform(transformation)
 
             # if y_max >= target_image_size[1] or x_max >= target_image_size[0]:
             #     continue
-            detection_results[i].d_box.y_max = min(detection_results[i].d_box.y_max,
-                                                   target_image_size[1])
-            detection_results[i].d_box.x_max = min(detection_results[i].d_box.x_max,
-                                                   target_image_size[0])
+            detection_results[i].detection_box.y_max = min(detection_results[i].detection_box.y_max, height)
+            detection_results[i].detection_box.x_max = min(detection_results[i].detection_box.x_max, width)
 
         return detection_results
 
-    def filter_detection_results(self, detection_results: DetectionResultsList, threshold,
+    def filter_detection_results(self, detection_results: DetectionResultsList, threshold: float,
                                  accepted_xy_range) -> DetectionResultsList:
         limit = len(detection_results)
         for idx in range(len(detection_results)):
-            if detection_results[idx].d_score < threshold:
+            if detection_results[idx].detection_score < threshold:
                 limit = idx
                 break
 
@@ -95,26 +96,15 @@ class AnalysisService:
 
         if accepted_xy_range == [1, 1]:
             return filtered_by_score
-
         else:
-            filtered_by_detection_box: DetectionResultsList = DetectionResultsList()
-
-            for idx in range(len(filtered_by_score)):
-                detection_box = detection_results[idx].d_box
-
-                if detection_box.y_min < self.BORDER_MARGIN_RELATIVE \
-                        or detection_box.x_min < self.BORDER_MARGIN_RELATIVE \
-                        or detection_box.y_max > (accepted_xy_range[1] - self.BORDER_MARGIN_RELATIVE) \
-                        or detection_box.x_max > (accepted_xy_range[0] - self.BORDER_MARGIN_RELATIVE):
+            # results = []
+            filtered_by_box = DetectionResultsList()
+            for res in filtered_by_score:
+                if res.detection_box.y_min < self.BORDER_MARGIN_RELATIVE \
+                        or res.detection_box.x_min < self.BORDER_MARGIN_RELATIVE \
+                        or res.detection_box.y_max > accepted_xy_range[1] - self.BORDER_MARGIN_RELATIVE \
+                        or res.detection_box.x_max > accepted_xy_range[0] - self.BORDER_MARGIN_RELATIVE:
                     continue
+                filtered_by_box.append(res)
 
-                filtered_by_detection_box.append(
-                    DetectionResult(filtered_by_score[idx].d_score,
-                                    filtered_by_score[idx].d_class,
-                                    detection_results[idx].d_box)
-                )
-
-            if len(filtered_by_detection_box) != 0:
-                return filtered_by_detection_box
-            else:
-                return DetectionResultsList()
+            return filtered_by_box

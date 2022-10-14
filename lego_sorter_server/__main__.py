@@ -14,7 +14,8 @@ def exception_handler(exc_type, value, tb):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--brick_category_config", "-c", help='.json file with brick-category mapping specification', type=str, required=False)
+    parser.add_argument("--brick_category_config", "-c", help='.json file with brick-category mapping specification',
+                        type=str, required=False)
     parser.add_argument('--lightweight', "-lw", action='store_true', help='enable new, lightweight version of services')
     args = parser.parse_args()
     logging.getLogger().setLevel(logging.INFO)
