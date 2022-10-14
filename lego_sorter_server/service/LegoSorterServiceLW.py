@@ -1,7 +1,5 @@
 import logging
 import time
-from socket import socket, AF_INET, SOCK_DGRAM
-from threading import Thread
 
 from lego_sorter_server.generated import LegoSorterLW_pb2_grpc
 from lego_sorter_server.generated.LegoSorterLW_pb2 import SorterConfiguration, ListOfBoundingBoxesWithIndexes, \
@@ -16,9 +14,8 @@ class LegoSorterServiceLW(LegoSorterLW_pb2_grpc.LegoSorterLWServicer):
 
     PORT = 50052
 
-    def __init__(self, brickCategoryConfig: BrickCategoryConfig):
-        self.sortingProcessor = SortingProcessor(brickCategoryConfig)
-        self.deviceIP = None
+    def __init__(self, brick_category_config: BrickCategoryConfig):
+        self.sortingProcessor = SortingProcessor(brick_category_config)
 
     def processNextImage(self, request: ImageRequest, context) -> ListOfBoundingBoxesWithIndexes:
         start_time = time.time()
@@ -49,6 +46,7 @@ class LegoSorterServiceLW(LegoSorterLW_pb2_grpc.LegoSorterLWServicer):
         self.sortingProcessor.set_machine_speed(request.speed)
         logging.info(f"[LegoSorterServiceLW] Setting new client IP: {request.deviceIP}.")
         self.deviceIP = request.deviceIP
+		
         return Empty()
 
     @staticmethod
@@ -69,12 +67,10 @@ class LegoSorterServiceLW(LegoSorterLW_pb2_grpc.LegoSorterLWServicer):
         response = ListOfBoundingBoxesWithIndexes()
         response.packet.extend(bbs_with_indexes)
 
-        return response
-
-
-    def send_image_order(self):
+        return 
+	
+	def send_image_order(self):
         if self.deviceIP is not None and self.deviceIP != "":
             sock = socket(AF_INET, SOCK_DGRAM)  # UDP Socket
             logging.info(f"[LegoSorterServiceLW] Sending image order to client {self.deviceIP}.")
             sock.sendto(bytes("IMAGE_ORDER", 'utf-8'), (self.deviceIP, self.PORT))
-
