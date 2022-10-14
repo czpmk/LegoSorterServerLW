@@ -5,7 +5,7 @@ from lego_sorter_server.generated import LegoSorter_pb2_grpc, LegoSorterLW_pb2_g
 from lego_sorter_server.service.LegoCaptureService import LegoCaptureService
 from service.LegoAnalysisService import LegoAnalysisService
 from service.LegoSorterService import LegoSorterService
-from service.LegoSorterServiceLW import LegoSorterServiceLW
+from service.LegoAsyncSorterService import LegoSorterServiceLW
 
 from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
 
