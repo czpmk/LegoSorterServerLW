@@ -2,9 +2,8 @@ import logging
 import time
 
 from lego_sorter_server.generated import LegoSorter_pb2_grpc
-from lego_sorter_server.generated.LegoSorter_pb2 import SorterConfiguration, ListOfBoundingBoxesWithIndexes, \
-    BoundingBoxWithIndex
-from lego_sorter_server.generated.Messages_pb2 import ImageRequest, BoundingBox, Empty
+from lego_sorter_server.generated.Messages_pb2 import ImageRequest, BoundingBox, Empty, SorterConfiguration, \
+    ListOfBoundingBoxesWithIndexes, BoundingBoxWithIndex
 from lego_sorter_server.service.ImageProtoUtils import ImageProtoUtils
 from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
 from lego_sorter_server.sorter.SortingProcessor import SortingProcessor

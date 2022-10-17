@@ -2,8 +2,7 @@ from concurrent import futures
 
 from lego_sorter_server.analysis.detection.LegoDetectionRunner import LegoDetectionRunner
 from lego_sorter_server.generated import LegoCapture_pb2_grpc
-from lego_sorter_server.generated.Messages_pb2 import Empty
-from lego_sorter_server.generated.LegoCapture_pb2 import ImageStore
+from lego_sorter_server.generated.Messages_pb2 import Empty, ImageStore
 
 from lego_sorter_server.images.queue.ImageProcessingQueue import ImageProcessingQueue, CAPTURE_TAG
 from lego_sorter_server.images.storage.LegoImageStorage import LegoImageStorage
