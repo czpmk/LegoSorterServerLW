@@ -48,7 +48,7 @@ class ImageProtoUtils:
 
             bb = detection_results[i].detection_box.to_bounding_box()
             bb.score = classification_results[i].classification_score
-            bb.label = classification_results[i].classification_label
+            bb.label = classification_results[i].classification_class
             bounding_boxes.append(bb)
 
         bb_list = ListOfBoundingBoxes()

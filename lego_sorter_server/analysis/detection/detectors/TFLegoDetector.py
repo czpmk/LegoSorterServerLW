@@ -13,18 +13,7 @@ from lego_sorter_server.analysis.detection.DetectionUtils import crop_with_margi
 
 from lego_sorter_server.analysis.detection.detectors.LegoDetector import LegoDetector
 from lego_sorter_server.common.DetectionResults import DetectionResultsList
-
-
-class ThreadSafeSingleton(type):
-    _instances = {}
-    _singleton_lock = threading.Lock()
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            with cls._singleton_lock:
-                if cls not in cls._instances:
-                    cls._instances[cls] = super(ThreadSafeSingleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
+from lego_sorter_server.common.ThreadSafeSingleton import ThreadSafeSingleton
 
 
 class TFLegoDetector(LegoDetector, metaclass=ThreadSafeSingleton):
