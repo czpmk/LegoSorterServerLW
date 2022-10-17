@@ -10,12 +10,12 @@ class AnalysisResult:
                  detection_score: float = None,
                  detection_class: str = None,
                  classification_score: float = None,
-                 classification_label: str = None):
+                 classification_class: str = None):
         self.detection_box: DetectionBox = detection_box
         self.detection_score: float = detection_score
         self.detection_class: str = detection_class
         self.classification_score: float = classification_score
-        self.classification_label: str = classification_label
+        self.classification_class: str = classification_class
 
     @classmethod
     def results_merged(cls, classification_result: ClassificationResult,
@@ -25,7 +25,7 @@ class AnalysisResult:
             detection_class=detection_result.detection_class,
             detection_score=detection_result.detection_score,
             classification_score=classification_result.classification_score,
-            classification_label=classification_result.classification_label
+            classification_class=classification_result.classification_class
         )
 
 

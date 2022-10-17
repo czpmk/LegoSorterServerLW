@@ -12,15 +12,14 @@ class LegoAsyncSorterService(LegoAsyncSorter_pb2_grpc.LegoAsyncSorterServicer):
 
     def __init__(self, brick_category_config: BrickCategoryConfig):
         self.sortingProcessor = AsyncSortingProcessor(brick_category_config)
-        self.deviceIP: str = ""
 
-    def startMachine(self, request: Empty, context):
-        self.sortingProcessor.start_machine()
+    def start(self, request: Empty, context):
+        self.sortingProcessor.start_sorting()
 
         return Empty()
 
-    def stopMachine(self, request: Empty, context):
-        self.sortingProcessor.stop_machine()
+    def stop(self, request: Empty, context):
+        self.sortingProcessor.stop_sorting()
 
         return Empty()
 
@@ -28,8 +27,9 @@ class LegoAsyncSorterService(LegoAsyncSorter_pb2_grpc.LegoAsyncSorterServicer):
         return super().getConfiguration(request, context)
 
     def updateConfiguration(self, request: SorterConfigurationWithIP, context):
+        logging.info(f"[LegoAsyncSorterService] Setting machine speed to: {request.speed}.")
         self.sortingProcessor.set_machine_speed(request.speed)
-        logging.info(f"[LegoSorterServiceLW] Setting new client IP: {request.deviceIP}.")
-        self.deviceIP = request.deviceIP
+        logging.info(f"[LegoAsyncSorterService] Setting new client IP: {request.deviceIP}.")
+        self.sortingProcessor.set_camera_ip(request.deviceIP)
 
         return Empty()
