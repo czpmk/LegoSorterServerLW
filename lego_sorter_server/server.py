@@ -6,9 +6,9 @@ from concurrent import futures
 from lego_sorter_server.generated import LegoSorter_pb2_grpc, LegoAsyncSorter_pb2_grpc, LegoCapture_pb2_grpc, \
     LegoAnalysis_pb2_grpc
 from lego_sorter_server.service.LegoCaptureService import LegoCaptureService
-from service.LegoAnalysisService import LegoAnalysisService
-from service.LegoSorterService import LegoSorterService
-from service.LegoAsyncSorterService import LegoAsyncSorterService
+from lego_sorter_server.service.LegoAnalysisService import LegoAnalysisService
+from lego_sorter_server.service.LegoSorterService import LegoSorterService
+from lego_sorter_server.service.LegoAsyncSorterService import LegoAsyncSorterService
 
 from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
 

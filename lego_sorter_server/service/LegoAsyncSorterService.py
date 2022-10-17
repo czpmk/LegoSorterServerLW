@@ -1,6 +1,7 @@
 import logging
 import time
 
+from lego_sorter_server.generated.Messages_pb2 import ImageRequest
 from lego_sorter_server.generated import LegoAsyncSorter_pb2_grpc
 from lego_sorter_server.generated.Messages_pb2 import Empty, SorterConfigurationWithIP
 from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
@@ -8,10 +9,13 @@ from lego_sorter_server.sorter.AsyncSortingProcessor import AsyncSortingProcesso
 
 
 class LegoAsyncSorterService(LegoAsyncSorter_pb2_grpc.LegoAsyncSorterServicer):
-    PORT = 50052
 
     def __init__(self, brick_category_config: BrickCategoryConfig):
         self.sortingProcessor = AsyncSortingProcessor(brick_category_config)
+
+    def processImage(self, request: ImageRequest, context):
+        self.sortingProcessor.add_image_to_queue(request.image)
+        return Empty()
 
     def start(self, request: Empty, context):
         self.sortingProcessor.start_sorting()

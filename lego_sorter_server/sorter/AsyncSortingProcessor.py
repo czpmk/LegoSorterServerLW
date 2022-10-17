@@ -1,4 +1,5 @@
 import logging
+import time
 from queue import Queue
 from threading import Thread
 from typing import Tuple
@@ -12,11 +13,15 @@ from lego_sorter_server.common.ClassificationResults import ClassificationResult
 from lego_sorter_server.common.DetectionResults import DetectionResultsList, DetectionResult
 from lego_sorter_server.common.Singleton import Singleton
 from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
+from lego_sorter_server.sorter.CameraController import CameraController
 from lego_sorter_server.sorter.LegoSorterController import LegoSorterController
 
 
-class AsyncSortingProcessor(metaclass=Singleton):
+class AsyncSortingProcessor:
     def __init__(self, brick_category_config: BrickCategoryConfig):
+        self.__run_processor = False
+        self.__run_subprocesses = False
+
         self.sorter_controller: LegoSorterController = LegoSorterController(brick_category_config)
         self.analysis_service: AnalysisService = AnalysisService()
 
@@ -28,20 +33,25 @@ class AsyncSortingProcessor(metaclass=Singleton):
         self.__classification_thread: Thread = Thread(target=self.__classify)
         self.__sorter_thread: Thread = Thread(target=self.__sort)
 
-        self.__sorting_processor_thread: Thread = Thread(target=self.__run())
+        self.__sorting_processor_thread: Thread = Thread(target=self.__run)
 
-        self.__running = False
+
+
+        self.__camera_controller = CameraController()
 
     def start_sorting(self):
         logging.info('[AsyncSortingProcessor] Sorting processor START.')
-        self.__running = True
-        self.__sorting_processor_thread.run()
+        if not self.__run_processor:
+            self.__run_processor = True
+            self.__sorting_processor_thread.run()
 
     def stop_sorting(self):
         logging.info('[AsyncSortingProcessor] Stopping Sorting processor...')
-        self.__running = False
-        self.__sorting_processor_thread.join(timeout=20)
-        logging.info('[AsyncSortingProcessor] Sorting processor STOP.')
+        if self.__run_processor:
+            self.__run_processor = False
+            if self.__sorting_processor_thread.is_alive():
+                self.__sorting_processor_thread.join(timeout=20)
+            logging.info('[AsyncSortingProcessor] Sorting processor STOP.')
 
     def reset(self):
         self.stop_sorting()
@@ -61,20 +71,24 @@ class AsyncSortingProcessor(metaclass=Singleton):
         self.sorter_controller.set_machine_speed(speed)
 
     def set_camera_ip(self, ip: str):
-        # TODO: set ip when camera controller is implemented
-        pass
+        self.__camera_controller.setIP(ip)
+
+    def add_image_to_queue(self, image: Image):
+        logging.info("TESTTTTTTT")
+        self.__detection_queue.put(image)
 
     def __run(self):
-        pass
+        self.__run_subprocesses = True
         self.__detection_thread.run()
         self.__classification_thread.run()
         self.__sorter_thread.run()
 
         # TODO -1: load the current state
         while True:
-            if self.__running is False:
+            time.sleep(1)
+            if self.__run_processor is False:
                 logging.info('[SortingAsyncProcessor] Sorting Processor thread stopped.')
-                break
+                continue
 
             # check if:
             #   detection_queue.empty() -> image is being processed
@@ -82,26 +96,31 @@ class AsyncSortingProcessor(metaclass=Singleton):
             # if not self.__detection_queue.empty() or self.__sorting_buffer.full():
             #     continue
 
-            # TODO: request an image
-            img: Image = Image()
-            self.__detection_queue.put(img)
+            self.__camera_controller.send_image_order()
 
             # TODO 2: add rest of the logic
             # TODO 3: optional features, such as saving images to storage shall be operated via threads target methods
 
-        self.__detection_thread.join(timeout=5)
-        self.__classification_thread.join(timeout=5)
-        self.__sorter_thread.join(timeout=10)
+        self.__run_subprocesses = False
+        if self.__detection_thread.is_alive():
+            self.__detection_thread.join(timeout=5)
+        if self.__classification_thread.is_alive():
+            self.__classification_thread.join(timeout=5)
+        if self.__sorter_thread.is_alive():
+            self.__sorter_thread.join(timeout=10)
 
     def __detect(self):
         while True:
-            if self.__running is False:
+            if self.__run_subprocesses is False:
                 logging.info('[AsyncSortingProcessor] Detection thread stopped. Detection queue size: {0}'.format(
                     self.__detection_queue.qsize()))
                 break
 
             try:
-                image: Image = self.__detection_queue.get(block=True, timeout=0.5)
+                if self.__detection_queue.empty():
+                    time.sleep(0.1)
+                    continue
+                image: Image = self.__detection_queue.get(timeout=0.5)
                 detection_results_list: DetectionResultsList = self.analysis_service.detect(image)
 
                 if len(detection_results_list) == 0:
@@ -129,13 +148,16 @@ class AsyncSortingProcessor(metaclass=Singleton):
 
     def __classify(self):
         while True:
-            if self.__running is False:
+            if self.__run_subprocesses is False:
                 logging.info('[AsyncSortingProcessor] Classification thread stopped. '
                              'Classification queue size: {0}'.format(self.__classification_queue.qsize()))
                 break
 
             try:
-                cropped_image, detection_result = self.__classification_queue.get(block=True, timeout=0.5)
+                if self.__classification_queue.empty():
+                    time.sleep(0.1)
+                    continue
+                cropped_image, detection_result = self.__classification_queue.get(timeout=0.5)
                 classification_results_list: ClassificationResultsList = self.analysis_service.classify([cropped_image])
 
                 # TODO: determine an action in case of lack of classification,
@@ -161,13 +183,16 @@ class AsyncSortingProcessor(metaclass=Singleton):
 
     def __sort(self):
         while True:
-            if self.__running is False:
+            if self.__run_subprocesses is False:
                 logging.info('[AsyncSortingProcessor] Sorting thread stopped. Sorting queue size: {0}'.format(
                     self.__sorting_queue.qsize()))
                 break
 
             try:
-                image, analysis_result = self.__sorting_queue.get(block=True, timeout=0.5)
+                if self.__sorting_queue.empty():
+                    time.sleep(0.1)
+                    continue
+                image, analysis_result = self.__sorting_queue.get(timeout=0.5)
                 self.sorter_controller.on_brick_recognized(analysis_result)
 
                 # TODO: wait until the brick is sorted
