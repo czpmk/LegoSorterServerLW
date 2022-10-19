@@ -78,7 +78,7 @@ class AsyncSortingProcessor:
         self.__camera_controller.setIP(ip)
 
     def add_image_to_queue(self, image: Image):
-        logging.info("TESTTTTTTT")
+        #logging.info("TESTTTTTTT")
         self.__detection_queue.put(image)
 
     def __run(self):
@@ -98,7 +98,8 @@ class AsyncSortingProcessor:
                 #logging.info('[AsyncSortingProcessor] Sorting Processor thread stopped.')
                 continue
                 #break
-            logging.info('[AsyncSortingProcessor] Sorting Processor running.')
+            #logging.info('[AsyncSortingProcessor] Sorting Processor running.')
+            #logging.info('[AsyncSortingProcessor] detection queue size: '+ str(self.__detection_queue.qsize()))
             # check if:
             #   detection_queue.empty() -> image is being processed
             #   sorting_buffer.full() -> no place to leave any potential recognized brick
@@ -119,7 +120,7 @@ class AsyncSortingProcessor:
         #    self.__sorter_thread.join(timeout=10)
 
     def __detect(self):
-        logging.info('__detect starting, __run_subprocesses value: '+str(self.__run_subprocesses))
+        #logging.info('__detect starting, __run_subprocesses value: '+str(self.__run_subprocesses))
         while True:
             if self.__run_subprocesses is False:
                 #logging.info('[AsyncSortingProcessor] Detection thread stopped. Detection queue size: {0}'.format(
