@@ -16,7 +16,7 @@ class LegoAsyncSorterService(LegoAsyncSorter_pb2_grpc.LegoAsyncSorterServicer):
 
     def processImage(self, request: ImageRequest, context):
         image = ImageProtoUtils.prepare_image(request)
-        self.sortingProcessor.add_image_to_queue(image)
+        self.sortingProcessor.enqueue_image(image)
         return Empty()
 
     def start(self, request: Empty, context):

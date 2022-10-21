@@ -20,7 +20,7 @@ class Server:
         options = [('grpc.max_receive_message_length', 100 * 1024 * 1024)]
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=16), options=options)
         LegoAsyncSorter_pb2_grpc.add_LegoAsyncSorterServicer_to_server(LegoAsyncSorterService(sorter_config),
-                                                                           server)
+                                                                       server)
         LegoSorter_pb2_grpc.add_LegoSorterServicer_to_server(LegoSorterService(sorter_config), server)
 
         LegoCapture_pb2_grpc.add_LegoCaptureServicer_to_server(LegoCaptureService(), server)
