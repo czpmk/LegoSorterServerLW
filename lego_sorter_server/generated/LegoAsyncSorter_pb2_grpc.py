@@ -22,11 +22,11 @@ class LegoAsyncSorterStub(object):
         self.getConfiguration = channel.unary_unary(
                 '/asyncSorter.LegoAsyncSorter/getConfiguration',
                 request_serializer=Messages__pb2.Empty.SerializeToString,
-                response_deserializer=Messages__pb2.SorterConfigurationWithIP.FromString,
+                response_deserializer=Messages__pb2.SorterConfiguration.FromString,
                 )
         self.updateConfiguration = channel.unary_unary(
                 '/asyncSorter.LegoAsyncSorter/updateConfiguration',
-                request_serializer=Messages__pb2.SorterConfigurationWithIP.SerializeToString,
+                request_serializer=Messages__pb2.SorterConfiguration.SerializeToString,
                 response_deserializer=Messages__pb2.Empty.FromString,
                 )
         self.start = channel.unary_unary(
@@ -85,11 +85,11 @@ def add_LegoAsyncSorterServicer_to_server(servicer, server):
             'getConfiguration': grpc.unary_unary_rpc_method_handler(
                     servicer.getConfiguration,
                     request_deserializer=Messages__pb2.Empty.FromString,
-                    response_serializer=Messages__pb2.SorterConfigurationWithIP.SerializeToString,
+                    response_serializer=Messages__pb2.SorterConfiguration.SerializeToString,
             ),
             'updateConfiguration': grpc.unary_unary_rpc_method_handler(
                     servicer.updateConfiguration,
-                    request_deserializer=Messages__pb2.SorterConfigurationWithIP.FromString,
+                    request_deserializer=Messages__pb2.SorterConfiguration.FromString,
                     response_serializer=Messages__pb2.Empty.SerializeToString,
             ),
             'start': grpc.unary_unary_rpc_method_handler(
@@ -142,7 +142,7 @@ class LegoAsyncSorter(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/asyncSorter.LegoAsyncSorter/getConfiguration',
             Messages__pb2.Empty.SerializeToString,
-            Messages__pb2.SorterConfigurationWithIP.FromString,
+            Messages__pb2.SorterConfiguration.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -158,7 +158,7 @@ class LegoAsyncSorter(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/asyncSorter.LegoAsyncSorter/updateConfiguration',
-            Messages__pb2.SorterConfigurationWithIP.SerializeToString,
+            Messages__pb2.SorterConfiguration.SerializeToString,
             Messages__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

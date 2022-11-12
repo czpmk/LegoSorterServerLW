@@ -3,7 +3,7 @@ import time
 
 from lego_sorter_server.generated.Messages_pb2 import ImageRequest
 from lego_sorter_server.generated import LegoAsyncSorter_pb2_grpc
-from lego_sorter_server.generated.Messages_pb2 import Empty, SorterConfigurationWithIP
+from lego_sorter_server.generated.Messages_pb2 import Empty, SorterConfiguration
 from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
 from lego_sorter_server.service.ImageProtoUtils import ImageProtoUtils
 from lego_sorter_server.sorter.AsyncSortingProcessor import AsyncSortingProcessor
@@ -29,13 +29,11 @@ class LegoAsyncSorterService(LegoAsyncSorter_pb2_grpc.LegoAsyncSorterServicer):
 
         return Empty()
 
-    def getConfiguration(self, request, context) -> SorterConfigurationWithIP:
+    def getConfiguration(self, request, context) -> SorterConfiguration:
         return super().getConfiguration(request, context)
 
-    def updateConfiguration(self, request: SorterConfigurationWithIP, context):
+    def updateConfiguration(self, request: SorterConfiguration, context):
         logging.info(f"[LegoAsyncSorterService] Setting machine speed to: {request.speed}.")
         self.sortingProcessor.set_machine_speed(request.speed)
-        logging.info(f"[LegoAsyncSorterService] Setting new client IP: {request.deviceIP}.")
-        self.sortingProcessor.set_camera_ip(request.deviceIP)
 
         return Empty()

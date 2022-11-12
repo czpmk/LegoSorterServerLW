@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0eMessages.proto\x12\x06\x63ommon\"c\n\x0b\x42oundingBox\x12\x0c\n\x04ymin\x18\x01 \x01(\x05\x12\x0c\n\x04xmin\x18\x02 \x01(\x05\x12\x0c\n\x04ymax\x18\x03 \x01(\x05\x12\x0c\n\x04xmax\x18\x04 \x01(\x05\x12\r\n\x05label\x18\x05 \x01(\t\x12\r\n\x05score\x18\x06 \x01(\x02\":\n\x13ListOfBoundingBoxes\x12#\n\x06packet\x18\x01 \x03(\x0b\x32\x13.common.BoundingBox\"F\n\x14\x42oundingBoxWithIndex\x12\r\n\x05index\x18\x01 \x01(\x05\x12\x1f\n\x02\x62\x62\x18\x02 \x01(\x0b\x32\x13.common.BoundingBox\"N\n\x1eListOfBoundingBoxesWithIndexes\x12,\n\x06packet\x18\x01 \x03(\x0b\x32\x1c.common.BoundingBoxWithIndex\"/\n\x0cImageRequest\x12\r\n\x05image\x18\x01 \x01(\x0c\x12\x10\n\x08rotation\x18\x02 \x01(\x05\"\x07\n\x05\x45mpty\"$\n\x13SorterConfiguration\x12\r\n\x05speed\x18\x01 \x01(\x05\"<\n\x19SorterConfigurationWithIP\x12\r\n\x05speed\x18\x01 \x01(\x05\x12\x10\n\x08\x64\x65viceIP\x18\x02 \x01(\t\"<\n\nImageStore\x12\r\n\x05image\x18\x01 \x01(\x0c\x12\x10\n\x08rotation\x18\x02 \x01(\x05\x12\r\n\x05label\x18\x03 \x01(\tB)\n\x12\x63om.lsorter.commonB\x13\x43ommonMessagesProtob\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0eMessages.proto\x12\x06\x63ommon\"c\n\x0b\x42oundingBox\x12\x0c\n\x04ymin\x18\x01 \x01(\x05\x12\x0c\n\x04xmin\x18\x02 \x01(\x05\x12\x0c\n\x04ymax\x18\x03 \x01(\x05\x12\x0c\n\x04xmax\x18\x04 \x01(\x05\x12\r\n\x05label\x18\x05 \x01(\t\x12\r\n\x05score\x18\x06 \x01(\x02\":\n\x13ListOfBoundingBoxes\x12#\n\x06packet\x18\x01 \x03(\x0b\x32\x13.common.BoundingBox\"F\n\x14\x42oundingBoxWithIndex\x12\r\n\x05index\x18\x01 \x01(\x05\x12\x1f\n\x02\x62\x62\x18\x02 \x01(\x0b\x32\x13.common.BoundingBox\"N\n\x1eListOfBoundingBoxesWithIndexes\x12,\n\x06packet\x18\x01 \x03(\x0b\x32\x1c.common.BoundingBoxWithIndex\"/\n\x0cImageRequest\x12\r\n\x05image\x18\x01 \x01(\x0c\x12\x10\n\x08rotation\x18\x02 \x01(\x05\"\x07\n\x05\x45mpty\"$\n\x13SorterConfiguration\x12\r\n\x05speed\x18\x01 \x01(\x05\"<\n\nImageStore\x12\r\n\x05image\x18\x01 \x01(\x0c\x12\x10\n\x08rotation\x18\x02 \x01(\x05\x12\r\n\x05label\x18\x03 \x01(\tB)\n\x12\x63om.lsorter.commonB\x13\x43ommonMessagesProtob\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'Messages_pb2', globals())
@@ -35,8 +35,6 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _EMPTY._serialized_end=395
   _SORTERCONFIGURATION._serialized_start=397
   _SORTERCONFIGURATION._serialized_end=433
-  _SORTERCONFIGURATIONWITHIP._serialized_start=435
-  _SORTERCONFIGURATIONWITHIP._serialized_end=495
-  _IMAGESTORE._serialized_start=497
-  _IMAGESTORE._serialized_end=557
+  _IMAGESTORE._serialized_start=435
+  _IMAGESTORE._serialized_end=495
 # @@protoc_insertion_point(module_scope)
