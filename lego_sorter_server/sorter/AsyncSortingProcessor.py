@@ -24,6 +24,13 @@ class AsyncSortingProcessor:
                                                                                 self.ordering.on_classification)
         self.sorting_worker: SortingWorker = SortingWorker(self.sorter_controller, self.ordering.on_sort)
 
+        self.ordering.add_workers(self.classification_worker, self.sorting_worker)
+
+    def enqueue_image(self, image: Image):
+        logging.debug('[AsyncSortingProcessor] New Image received from CameraController')
+        image_idx: int = self.ordering.add_image(image)
+        self.detection_worker.enqueue((image_idx, image))
+
     def start_sorting(self):
         if self._running:
             logging.warning('[AsyncSortingProcessor] start_sorting called yet the Sorter was already started')
@@ -50,35 +57,3 @@ class AsyncSortingProcessor:
     def set_machine_speed(self, speed: int):
         logging.debug('[AsyncSortingProcessor] Setting conveyor belt speed to: {0}'.format(speed))
         self.sorter_controller.set_machine_speed(speed)
-
-    def enqueue_image(self, image: Image):
-        logging.debug('[AsyncSortingProcessor] New Image received from CameraController')
-        image_idx = self.ordering.register_picture()
-        self.detection_worker.enqueue((image_idx, image))
-
-    # def __sort(self):
-    #     while True:
-    #         if self.__is_active is False:
-    #             logging.info(
-    #                 '[AsyncSortingProcessor] Sorting thread stopped. Sorting queue size: {0}'.format(
-    #                     self.__sorting_queue.qsize()))
-    #             return
-    #
-    #         try:
-    #             image, analysis_result = self.__sorting_queue.get(timeout=0.5)
-    #             # TODO: save the original image height
-    #             original_image_height = 640
-    #
-    #             # move the conveyor belt to push the brick out of it
-    #             self.conveyor_manager.move_by(analysis_result.detection_box.y_max, original_image_height)
-    #             # sort the brick
-    #             self.conveyor_manager.place_in_a_bucket(analysis_result)
-    #
-    #             # TODO: wait until the brick is sorted
-    #             logging.info('[AsyncSortingProcessor] Brick sorted (class={:}, score={:.2f}). '.format(
-    #                 analysis_result.classification_class,
-    #                 analysis_result.classification_score)
-    #             )
-    #
-    #         except Empty:
-    #             pass
