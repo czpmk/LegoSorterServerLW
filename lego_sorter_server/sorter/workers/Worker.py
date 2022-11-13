@@ -32,10 +32,10 @@ class Worker:
         self._running = False
         if self._thread.is_alive():
             self._thread.join(1)
-        logging.info('[{0}] Stopping thread (Queue size: {0})'.format(self._type(), self._queue.qsize()))
+        logging.info('[{0}] Stopping thread (Queue size: {1})'.format(self._type(), self._queue.qsize()))
 
     def clear_queue(self):
-        logging.info('[{0}] Clearing queue (Queue size: {0})'.format(self._type(), self._queue.qsize()))
+        logging.info('[{0}] Clearing queue (Queue size: {1})'.format(self._type(), self._queue.qsize()))
         with self._queue.mutex:
             self._queue.queue.clear()
 
