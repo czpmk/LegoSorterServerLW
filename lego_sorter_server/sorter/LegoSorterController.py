@@ -27,7 +27,7 @@ class LegoSorterController:
     def on_brick_recognized(self, brick: AnalysisResult):
         brick_coords, brick_cls, brick_prob = brick.detection_box, brick.classification_class, brick.classification_score
         cat_name, pos = self.brickCategoryConfig[brick_cls]
-        logging.info(f"Moving brick with class: {brick_cls} to stack: {cat_name} (pos: {pos})")
+        logging.info(f"[LegoSorterController] Moving brick with class: {brick_cls} to stack: {cat_name} (pos: {pos})")
         requests.get(f"{self.SORTER_LOCAL_ADDRESS}/sort?action={pos}")
 
     def set_machine_speed(self, speed):
