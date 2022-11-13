@@ -10,13 +10,16 @@ class SimpleOrdering:
     BORDER_MARGIN = 5
 
     def __init__(self):
-        # memorized state: for each index in OrderDict there is AnalysisResultsList OF THE SAME BRICK.
-        # e.g. given there are 6 nearly identical photos of the same layout of 3 bricks, memorized state shall contain
-        # 3 lists (1 per brick), each of them containing 6 AnalysisResults (1 per photo)
         self.memorized_state: OrderedDict[int, AnalysisResultsList] = OrderedDict()
-        # processed_bricks: AnalysisResultsList per each processed brick
+        '''
+        memorized state: for each index in OrderDict there is AnalysisResultsList OF THE SAME BRICK.
+        e.g. given there are 6 nearly identical photos of the same layout of 3 bricks, memorized state shall contain
+        3 lists (1 per brick), each of them containing 6 AnalysisResults (1 per photo)
+        '''
         self.processed_bricks: List[AnalysisResultsList] = []
-        self.head_index = -1  # this indicates the index of the first brick on the tape
+        '''processed_bricks: AnalysisResultsList per each processed brick'''
+        self.head_index = -1
+        '''this indicates the index of the first brick on the tape'''
 
     def process_current_results(self, results: AnalysisResultsList, image_height: int):
         if len(results) == 0:

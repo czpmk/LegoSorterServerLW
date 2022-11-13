@@ -16,7 +16,7 @@ class LegoAsyncSorterService(LegoAsyncSorter_pb2_grpc.LegoAsyncSorterServicer):
 
     def processImage(self, request: ImageRequest, context):
         image = ImageProtoUtils.prepare_image(request)
-        self.sortingProcessor.add_image_to_queue(image)
+        self.sortingProcessor.enqueue_image(image)
         return Empty()
 
     def start(self, request: Empty, context):
@@ -33,7 +33,7 @@ class LegoAsyncSorterService(LegoAsyncSorter_pb2_grpc.LegoAsyncSorterServicer):
         return super().getConfiguration(request, context)
 
     def updateConfiguration(self, request: SorterConfiguration, context):
-        logging.info(f"[LegoAsyncSorterService] Setting machine speed to: {request.speed}.")
+        logging.info("[LegoAsyncSorterService] Setting machine speed to: {0}.".format(request.speed))
         self.sortingProcessor.set_machine_speed(request.speed)
 
         return Empty()
