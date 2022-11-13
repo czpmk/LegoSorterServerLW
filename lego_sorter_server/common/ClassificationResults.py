@@ -5,8 +5,8 @@ CLASSIFICATION_CLASSES_NAME = 'classification_classes'
 
 
 class ClassificationResult:
-    def __init__(self, classification_score: float, classification_label: str):
-        self.classification_label: str = classification_label
+    def __init__(self, classification_score: float, classification_class: str):
+        self.classification_class: str = classification_class
         self.classification_score: float = classification_score
 
 
@@ -20,7 +20,7 @@ class ClassificationResultsList(List[ClassificationResult]):
             [
                 ClassificationResult(
                     classification_score=results[CLASSIFICATION_SCORES_NAME][idx],
-                    classification_label=results[CLASSIFICATION_CLASSES_NAME][idx]
+                    classification_class=results[CLASSIFICATION_CLASSES_NAME][idx]
                 ) for idx in range(len(results[CLASSIFICATION_SCORES_NAME]))
             ]
         )
@@ -36,7 +36,7 @@ class ClassificationResultsList(List[ClassificationResult]):
             [
                 ClassificationResult(
                     classification_score=classification_scores[idx],
-                    classification_label=classification_classes[idx]
+                    classification_class=classification_classes[idx]
                 ) for idx in range(len(classification_classes))
             ]
         )

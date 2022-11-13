@@ -7,8 +7,9 @@ option java_package = "com.lsorter.asyncSorter";
 option java_outer_classname = "LegoAsyncSorterProto";
 
 service LegoAsyncSorter {
-  rpc getConfiguration(common.Empty) returns (common.SorterConfigurationWithIP);
-  rpc updateConfiguration(common.SorterConfigurationWithIP) returns (common.Empty);
-  rpc startMachine(common.Empty) returns (common.Empty);
-  rpc stopMachine(common.Empty) returns (common.Empty);
+  rpc processImage(common.ImageRequest) returns (common.Empty);
+  rpc getConfiguration(common.Empty) returns (common.SorterConfiguration);
+  rpc updateConfiguration(common.SorterConfiguration) returns (common.Empty);
+  rpc start(common.Empty) returns (common.Empty);
+  rpc stop(common.Empty) returns (common.Empty);
 }

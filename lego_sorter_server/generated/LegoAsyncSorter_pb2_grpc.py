@@ -14,23 +14,28 @@ class LegoAsyncSorterStub(object):
         Args:
             channel: A grpc.Channel.
         """
+        self.processImage = channel.unary_unary(
+                '/asyncSorter.LegoAsyncSorter/processImage',
+                request_serializer=Messages__pb2.ImageRequest.SerializeToString,
+                response_deserializer=Messages__pb2.Empty.FromString,
+                )
         self.getConfiguration = channel.unary_unary(
                 '/asyncSorter.LegoAsyncSorter/getConfiguration',
                 request_serializer=Messages__pb2.Empty.SerializeToString,
-                response_deserializer=Messages__pb2.SorterConfigurationWithIP.FromString,
+                response_deserializer=Messages__pb2.SorterConfiguration.FromString,
                 )
         self.updateConfiguration = channel.unary_unary(
                 '/asyncSorter.LegoAsyncSorter/updateConfiguration',
-                request_serializer=Messages__pb2.SorterConfigurationWithIP.SerializeToString,
+                request_serializer=Messages__pb2.SorterConfiguration.SerializeToString,
                 response_deserializer=Messages__pb2.Empty.FromString,
                 )
-        self.startMachine = channel.unary_unary(
-                '/asyncSorter.LegoAsyncSorter/startMachine',
+        self.start = channel.unary_unary(
+                '/asyncSorter.LegoAsyncSorter/start',
                 request_serializer=Messages__pb2.Empty.SerializeToString,
                 response_deserializer=Messages__pb2.Empty.FromString,
                 )
-        self.stopMachine = channel.unary_unary(
-                '/asyncSorter.LegoAsyncSorter/stopMachine',
+        self.stop = channel.unary_unary(
+                '/asyncSorter.LegoAsyncSorter/stop',
                 request_serializer=Messages__pb2.Empty.SerializeToString,
                 response_deserializer=Messages__pb2.Empty.FromString,
                 )
@@ -38,6 +43,12 @@ class LegoAsyncSorterStub(object):
 
 class LegoAsyncSorterServicer(object):
     """Missing associated documentation comment in .proto file."""
+
+    def processImage(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def getConfiguration(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -51,13 +62,13 @@ class LegoAsyncSorterServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def startMachine(self, request, context):
+    def start(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def stopMachine(self, request, context):
+    def stop(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -66,23 +77,28 @@ class LegoAsyncSorterServicer(object):
 
 def add_LegoAsyncSorterServicer_to_server(servicer, server):
     rpc_method_handlers = {
+            'processImage': grpc.unary_unary_rpc_method_handler(
+                    servicer.processImage,
+                    request_deserializer=Messages__pb2.ImageRequest.FromString,
+                    response_serializer=Messages__pb2.Empty.SerializeToString,
+            ),
             'getConfiguration': grpc.unary_unary_rpc_method_handler(
                     servicer.getConfiguration,
                     request_deserializer=Messages__pb2.Empty.FromString,
-                    response_serializer=Messages__pb2.SorterConfigurationWithIP.SerializeToString,
+                    response_serializer=Messages__pb2.SorterConfiguration.SerializeToString,
             ),
             'updateConfiguration': grpc.unary_unary_rpc_method_handler(
                     servicer.updateConfiguration,
-                    request_deserializer=Messages__pb2.SorterConfigurationWithIP.FromString,
+                    request_deserializer=Messages__pb2.SorterConfiguration.FromString,
                     response_serializer=Messages__pb2.Empty.SerializeToString,
             ),
-            'startMachine': grpc.unary_unary_rpc_method_handler(
-                    servicer.startMachine,
+            'start': grpc.unary_unary_rpc_method_handler(
+                    servicer.start,
                     request_deserializer=Messages__pb2.Empty.FromString,
                     response_serializer=Messages__pb2.Empty.SerializeToString,
             ),
-            'stopMachine': grpc.unary_unary_rpc_method_handler(
-                    servicer.stopMachine,
+            'stop': grpc.unary_unary_rpc_method_handler(
+                    servicer.stop,
                     request_deserializer=Messages__pb2.Empty.FromString,
                     response_serializer=Messages__pb2.Empty.SerializeToString,
             ),
@@ -97,6 +113,23 @@ class LegoAsyncSorter(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
+    def processImage(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/asyncSorter.LegoAsyncSorter/processImage',
+            Messages__pb2.ImageRequest.SerializeToString,
+            Messages__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
     def getConfiguration(request,
             target,
             options=(),
@@ -109,7 +142,7 @@ class LegoAsyncSorter(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/asyncSorter.LegoAsyncSorter/getConfiguration',
             Messages__pb2.Empty.SerializeToString,
-            Messages__pb2.SorterConfigurationWithIP.FromString,
+            Messages__pb2.SorterConfiguration.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -125,13 +158,13 @@ class LegoAsyncSorter(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/asyncSorter.LegoAsyncSorter/updateConfiguration',
-            Messages__pb2.SorterConfigurationWithIP.SerializeToString,
+            Messages__pb2.SorterConfiguration.SerializeToString,
             Messages__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def startMachine(request,
+    def start(request,
             target,
             options=(),
             channel_credentials=None,
@@ -141,14 +174,14 @@ class LegoAsyncSorter(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/asyncSorter.LegoAsyncSorter/startMachine',
+        return grpc.experimental.unary_unary(request, target, '/asyncSorter.LegoAsyncSorter/start',
             Messages__pb2.Empty.SerializeToString,
             Messages__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def stopMachine(request,
+    def stop(request,
             target,
             options=(),
             channel_credentials=None,
@@ -158,7 +191,7 @@ class LegoAsyncSorter(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/asyncSorter.LegoAsyncSorter/stopMachine',
+        return grpc.experimental.unary_unary(request, target, '/asyncSorter.LegoAsyncSorter/stop',
             Messages__pb2.Empty.SerializeToString,
             Messages__pb2.Empty.FromString,
             options, channel_credentials,

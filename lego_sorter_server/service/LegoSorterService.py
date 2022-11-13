@@ -1,6 +1,8 @@
 import logging
 import time
+from typing import Dict
 
+from lego_sorter_server.common.AnalysisResults import AnalysisResult
 from lego_sorter_server.generated import LegoSorter_pb2_grpc
 from lego_sorter_server.generated.Messages_pb2 import ImageRequest, BoundingBox, Empty, SorterConfiguration, \
     ListOfBoundingBoxesWithIndexes, BoundingBoxWithIndex
@@ -45,13 +47,13 @@ class LegoSorterService(LegoSorter_pb2_grpc.LegoSorterServicer):
         return Empty()
 
     @staticmethod
-    def _prepare_response_from_sorter_state(current_state: dict) -> ListOfBoundingBoxesWithIndexes:
+    def _prepare_response_from_sorter_state(current_state: Dict[int, AnalysisResult]) -> ListOfBoundingBoxesWithIndexes:
         bbs_with_indexes = []
         for key, value in current_state.items():
             bb = BoundingBox()
-            bb.ymin, bb.xmin, bb.ymax, bb.xmax = value[0]
-            bb.label = value[1]
-            bb.score = value[2]
+            bb.ymin, bb.xmin, bb.ymax, bb.xmax = value.detection_box.to_tuple()
+            bb.label = value.classification_class
+            bb.score = value.classification_score
 
             bb_index = BoundingBoxWithIndex()
             bb_index.bb.CopyFrom(bb)

@@ -83,7 +83,7 @@ class SimpleOrdering:
         return current_state
 
     def _get_first_brick(self) -> Optional[AnalysisResult]:
-        res_list: AnalysisResultsList = self.memorized_state.get(self.head_index, default=[AnalysisResultsList()])
+        res_list: AnalysisResultsList = self.memorized_state.get(self.head_index, AnalysisResultsList())
         if len(res_list) == 0:
             return None
         else:
