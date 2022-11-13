@@ -33,9 +33,9 @@ class LegoAsyncSorterService(LegoAsyncSorter_pb2_grpc.LegoAsyncSorterServicer):
         return super().getConfiguration(request, context)
 
     def updateConfiguration(self, request: SorterConfigurationWithIP, context):
-        logging.info(f"[LegoAsyncSorterService] Setting machine speed to: {request.speed}.")
+        logging.info("[LegoAsyncSorterService] Setting machine speed to: {0}.".format(request.speed))
         self.sortingProcessor.set_machine_speed(request.speed)
-        logging.info(f"[LegoAsyncSorterService] Setting new client IP: {request.deviceIP}.")
+        logging.info("[LegoAsyncSorterService] Setting new client IP: {0}.".format(request.deviceIP))
         self.sortingProcessor.set_camera_ip(request.deviceIP)
 
         return Empty()
