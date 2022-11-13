@@ -1,11 +1,9 @@
 import logging
-import time
 
 from PIL.Image import Image
 
 from lego_sorter_server.analysis.AnalysisService import AnalysisService
 from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
-from lego_sorter_server.sorter.CameraController import CameraController
 from lego_sorter_server.sorter.LegoSorterController import LegoSorterController
 from lego_sorter_server.sorter.ordering.AsyncOrdering import AsyncOrdering
 from lego_sorter_server.sorter.workers.ClassificationWorker import ClassificationWorker
@@ -17,8 +15,6 @@ class AsyncSortingProcessor:
     def __init__(self, brick_category_config: BrickCategoryConfig):
         self._running = False
 
-        # TODO: refactor
-        self.camera_controller: CameraController = CameraController()
         self.analysis_service: AnalysisService = AnalysisService()
         self.sorter_controller: LegoSorterController = LegoSorterController(brick_category_config)
         self.ordering: AsyncOrdering = AsyncOrdering()
@@ -59,24 +55,6 @@ class AsyncSortingProcessor:
         logging.debug('[AsyncSortingProcessor] New Image received from CameraController')
         image_idx = self.ordering.register_picture()
         self.detection_worker.enqueue((image_idx, image))
-
-    # TODO: remove
-    def set_camera_ip(self, ip: str):
-        logging.debug('[AsyncSortingProcessor] Setting camera IP to: {0}'.format(ip))
-        # self.sorter_controller.setIP(ip)
-
-    # TODO: remove
-    def __run(self):
-        logging.info('[AsyncSortingProcessor] Sorting Processor thread started.')
-
-        # TODO -1: load the current state
-        while True:
-            time.sleep(1)
-            if self._running is False:
-                logging.info('[AsyncSortingProcessor] Sorting Processor thread stopped.')
-                return
-
-            self.camera_controller.send_image_order()
 
     # def __sort(self):
     #     while True:

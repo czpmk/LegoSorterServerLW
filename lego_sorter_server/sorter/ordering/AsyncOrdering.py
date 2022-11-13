@@ -20,7 +20,7 @@ class AsyncOrdering:
         self.head_idx = -1
         '''Index of first brick on the tape'''
 
-        self.images = -1
+        self.image_idx = -1
         '''Index of the last picture'''
 
     def register_picture(self) -> int:
