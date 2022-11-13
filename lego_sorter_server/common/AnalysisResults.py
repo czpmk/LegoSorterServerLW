@@ -42,6 +42,10 @@ class AnalysisResult:
             classification_class=classification_result.classification_class
         )
 
+    def merge_classification_result(self, classification_result: ClassificationResult):
+        self.classification_score = classification_result.classification_score
+        self.classification_class = classification_result.classification_class
+
 
 class AnalysisResultsList(List[AnalysisResult]):
     @classmethod
