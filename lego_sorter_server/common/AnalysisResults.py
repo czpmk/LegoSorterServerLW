@@ -1,5 +1,8 @@
 from typing import List
 
+from PIL.Image import Image
+
+from lego_sorter_server.analysis.detection import DetectionUtils
 from lego_sorter_server.common.ClassificationResults import ClassificationResult, ClassificationResultsList
 from lego_sorter_server.common.DetectionResults import DetectionBox, DetectionResult, DetectionResultsList
 
@@ -10,16 +13,27 @@ class AnalysisResult:
                  detection_score: float = None,
                  detection_class: str = None,
                  classification_score: float = None,
-                 classification_class: str = None):
+                 classification_class: str = None,
+                 image: Image = None):
         self.detection_box: DetectionBox = detection_box
         self.detection_score: float = detection_score
         self.detection_class: str = detection_class
         self.classification_score: float = classification_score
         self.classification_class: str = classification_class
+        self.image: Image = image
 
     @classmethod
-    def results_merged(cls, classification_result: ClassificationResult,
-                       detection_result: DetectionResult):
+    def from_detection_result(cls, detection_result: DetectionResult, image: Image):
+        return cls(
+            detection_box=detection_result.detection_box,
+            detection_class=detection_result.detection_class,
+            detection_score=detection_result.detection_score,
+            image=image
+        )
+
+    @classmethod
+    def from_detection_and_classification_result(cls, classification_result: ClassificationResult,
+                                                 detection_result: DetectionResult):
         return cls(
             detection_box=detection_result.detection_box,
             detection_class=detection_result.detection_class,
@@ -38,9 +52,22 @@ class AnalysisResultsList(List[AnalysisResult]):
 
         return cls(
             [
-                AnalysisResult.results_merged(
+                AnalysisResult.from_detection_and_classification_result(
                     classification_result=classification_results[idx],
                     detection_result=detection_results[idx]
                 ) for idx in range(len(classification_results))
+            ]
+        )
+
+    @classmethod
+    def from_detection_results_with_image(cls, detection_results_list: DetectionResultsList, image: Image):
+        return cls(
+            [
+                AnalysisResult.from_detection_result(
+                    detection_result,
+                    DetectionUtils.crop_with_margin_from_detection_box(image,
+                                                                       detection_result.detection_box)
+                )
+                for detection_result in detection_results_list
             ]
         )
