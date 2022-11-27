@@ -9,6 +9,12 @@ class ClassificationResult:
         self.classification_class: str = classification_class
         self.classification_score: float = classification_score
 
+    def to_dict(self):
+        return {
+            'classification_class': self.classification_class,
+            'classification_score': self.classification_score
+        }
+
 
 class ClassificationResultsList(List[ClassificationResult]):
     @classmethod

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict, Any
 
 from PIL.Image import Image
 
@@ -45,6 +45,16 @@ class AnalysisResult:
     def merge_classification_result(self, classification_result: ClassificationResult):
         self.classification_score = classification_result.classification_score
         self.classification_class = classification_result.classification_class
+
+    def to_dict(self) -> Dict[str, Any]:
+        analysis_result = {
+            'classification_class': self.classification_class,
+            'classification_score': self.classification_score,
+            'detection_class': self.detection_class,
+            'detection_score': self.detection_score
+        }
+        analysis_result.update({'detection_box.{0}'.format(k): v for k, v in self.detection_box.to_dict().items()})
+        return analysis_result
 
 
 class AnalysisResultsList(List[AnalysisResult]):
