@@ -8,6 +8,7 @@ from PIL.Image import Image
 
 from lego_sorter_server.analysis.detection import DetectionUtils
 from lego_sorter_server.common.AnalysisResults import AnalysisResultsList, AnalysisResult
+from lego_sorter_server.common.BrickSortingStatus import BrickSortingStatus
 from lego_sorter_server.common.ClassificationResults import ClassificationResult
 from lego_sorter_server.common.DetectionResults import DetectionResultsList, DetectionResult, DetectionBox
 from lego_sorter_server.sorter.workers.ClassificationWorker import ClassificationWorker
@@ -22,7 +23,8 @@ class AsyncOrdering:
         # TODO: fix - head_brick_idx should be idx of the brick closest to the camera line, not last idx of the brick
         self.head_brick_idx = -1
         '''Index of first brick on the tape'''
-        self.bricks: OrderedDict[int, AnalysisResultsList] = OrderedDict()
+        self.bricks: OrderedDict[int, BrickSortingStatus] = OrderedDict()
+        # self.bricks: OrderedDict[int, AnalysisResultsList] = OrderedDict()
         '''Ordered dict of all the bricks, sorted and in process'''
 
         self.head_image_idx = -1
@@ -57,9 +59,6 @@ class AsyncOrdering:
         self._prepare_for_classification(image_idx, detection_results_list)
 
     def _prepare_for_classification(self, image_idx: int, detection_results_list: DetectionResultsList):
-        # TODO: remove images once
-        image: Image = self.images[image_idx]
-
         previous_first_brick_id, previous_first_detection_box = self._get_first_brick_from_conveyor_state()
 
         new_conveyor_state: OrderedDict[int, DetectionBox] = OrderedDict()
@@ -87,19 +86,23 @@ class AsyncOrdering:
         analysis_result = AnalysisResult.from_detection_result(detection_result, cropped_image)
 
         if brick_id not in self.bricks.keys():
-            self.bricks[brick_id] = AnalysisResultsList()
+            self.bricks[brick_id] = BrickSortingStatus(brick_id)
+            self.bricks[brick_id].detected = True
 
-        detection_id = len(self.bricks[brick_id])
-        self.bricks[brick_id].append(analysis_result)
+        detection_id = len(self.bricks[brick_id].analysis_results_list)
+        self.bricks[brick_id].analysis_results_list.append(analysis_result)
 
         self.classification_worker.enqueue((brick_id, detection_id, cropped_image))
 
+        # TODO: add image storing option
+        self.images.pop(image_idx)
+
     def on_classification(self, brick_id: int, detection_id: int, classification_result: ClassificationResult):
-        self.bricks[brick_id][detection_id].merge_classification_result(classification_result)
+        self.bricks[brick_id].analysis_results_list[detection_id].merge_classification_result(classification_result)
+        self.bricks[brick_id].classified = True
 
     def on_sort(self, brick_id):
-        # TODO: add logic - stats
-        pass
+        self.bricks[brick_id].sorted = True
 
     def _sort(self, brick_id_list: List[int]):
         if len(brick_id_list) == 0:
@@ -108,18 +111,20 @@ class AsyncOrdering:
 
         if len(brick_id_list) > 1:
             logging.warning(
-                '[AsyncOrdering] Multiple bricks passed the camera line: {0}. Attempting sort just the first brick'.format(
-                    len(brick_id_list)))
+                '[AsyncOrdering] Multiple bricks passed the camera line: {0}. '
+                'Attempting sort just the first brick'.format(len(brick_id_list)))
 
         brick_id = brick_id_list[0]
         analysis_result = self._get_analysis_result(brick_id)
+        self.bricks[brick_id].final_classification_class = analysis_result.classification_class
+
         if analysis_result is not None:
             self.sorting_worker.enqueue((brick_id, analysis_result))
 
         # TODO: rest of the logic - stats
 
     def _get_analysis_result(self, brick_id) -> Optional[AnalysisResult]:
-        analysis_results_list = self.bricks[brick_id]
+        analysis_results_list = self.bricks[brick_id].analysis_results_list
         analysis_results_list_classified: AnalysisResultsList = AnalysisResultsList(
             [result for result in analysis_results_list if
              result.classification_score is not None])
@@ -143,7 +148,8 @@ class AsyncOrdering:
             bricks_passed_camera_line = list(filter(
                 lambda brick_id: not self._is_the_same_brick(self.conveyor_state[brick_id],
                                                              current_first_detection.detection_box),
-                self.conveyor_state.keys()))
+                self.conveyor_state.keys())
+            )
 
         for brick_id in bricks_passed_camera_line:
             self.conveyor_state.pop(brick_id)
@@ -162,21 +168,11 @@ class AsyncOrdering:
                previous_detection.y_max <= current_detection.y_max
 
     def export_history_to_csv(self, file_path: str):
-        unique_id = 0
         results_list = []
         for brick_id in self.bricks.keys():
-            for result_id in range(len(self.bricks[brick_id])):
-                next_result = {
-                    'id': unique_id,
-                    'brick_id': brick_id,
-                    'result_id': result_id,
-                }
-                next_result.update(self.bricks[brick_id][result_id].to_dict())
-                results_list.append(next_result)
-                unique_id += 1
+            results_list.extend(self.bricks[brick_id].to_list_of_dicts())
 
         df = pd.DataFrame.from_dict(results_list)
-        df = df.set_index('id')
 
         if not os.path.isdir(os.path.dirname(file_path)):
             os.makedirs(os.path.dirname(file_path))
