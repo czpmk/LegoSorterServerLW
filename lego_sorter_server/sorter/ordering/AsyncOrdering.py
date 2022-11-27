@@ -1,7 +1,9 @@
 import logging
+import os
 from collections import OrderedDict
 from typing import List, Tuple, Optional
 
+import pandas as pd
 from PIL.Image import Image
 
 from lego_sorter_server.analysis.detection import DetectionUtils
@@ -158,3 +160,26 @@ class AsyncOrdering:
     def _is_the_same_brick(previous_detection: DetectionBox, current_detection: DetectionBox) -> bool:
         return previous_detection.y_min <= current_detection.y_min or \
                previous_detection.y_max <= current_detection.y_max
+
+    def export_history_to_csv(self, file_path: str):
+        unique_id = 0
+        results_list = []
+        for brick_id in self.bricks.keys():
+            for result_id in range(len(self.bricks[brick_id])):
+                next_result = {
+                    'id': unique_id,
+                    'brick_id': brick_id,
+                    'result_id': result_id,
+                }
+                next_result.update(self.bricks[brick_id][result_id].to_dict())
+                results_list.append(next_result)
+                unique_id += 1
+
+        df = pd.DataFrame.from_dict(results_list)
+        df = df.set_index('id')
+
+        if not os.path.isdir(os.path.dirname(file_path)):
+            os.makedirs(os.path.dirname(file_path))
+
+        logging.info('[AsyncOrdering] Saving Ordering history to file: {0}'.format(file_path))
+        df.to_csv(file_path)

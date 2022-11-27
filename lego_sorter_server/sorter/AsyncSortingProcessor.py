@@ -1,4 +1,6 @@
 import logging
+import os
+from datetime import datetime
 
 from PIL.Image import Image
 
@@ -52,6 +54,9 @@ class AsyncSortingProcessor:
         self.detection_worker.stop()
         self.classification_worker.stop()
         self.sorting_worker.stop()
+
+        self.ordering.export_history_to_csv(
+            os.path.join(os.getcwd(), 'Exports', 'export_{0}.csv'.format(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))))
         logging.info('[AsyncSortingProcessor] Sorting processor STOP.')
 
     def set_machine_speed(self, speed: int):
