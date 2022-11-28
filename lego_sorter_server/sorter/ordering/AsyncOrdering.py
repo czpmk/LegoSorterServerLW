@@ -21,7 +21,7 @@ class AsyncOrdering:
         '''Bricks on the conveyor belt, format - key: brick_id: int, value = detection_box: DetectionBox'''
 
         # TODO: fix - head_brick_idx should be idx of the brick closest to the camera line, not last idx of the brick
-        self.head_brick_idx = -1
+        self.head_brick_idx = 0
         '''Index of first brick on the tape'''
         self.bricks: OrderedDict[int, BrickSortingStatus] = OrderedDict()
         # self.bricks: OrderedDict[int, AnalysisResultsList] = OrderedDict()
@@ -54,14 +54,21 @@ class AsyncOrdering:
         # check if any brick has passed the camera line - trigger sorter
         bricks_passed_the_camera_line = self._get_bricks_passed_the_camera_line(detection_results_list)
         if len(bricks_passed_the_camera_line) > 0:
+            self.head_brick_idx = max(bricks_passed_the_camera_line) + 1
+            self.classification_worker.set_head_brick_idx(self.head_brick_idx)
+
             self._sort(bricks_passed_the_camera_line)
 
         self._prepare_for_classification(image_idx, detection_results_list)
+        # TODO: add image storing option
+        self.images.pop(image_idx)
 
     def _prepare_for_classification(self, image_idx: int, detection_results_list: DetectionResultsList):
         previous_first_brick_id, previous_first_detection_box = self._get_first_brick_from_conveyor_state()
 
         new_conveyor_state: OrderedDict[int, DetectionBox] = OrderedDict()
+
+        next_brick_id = self.head_brick_idx
 
         for detection_result in detection_results_list:
             # check if detected bricks are already on the conveyor belt
@@ -71,8 +78,9 @@ class AsyncOrdering:
                 previous_first_brick_id, previous_first_detection_box = self._get_first_brick_from_conveyor_state()
 
             else:
-                self.head_brick_idx += 1
-                brick_id = self.head_brick_idx
+                # self.head_brick_idx += 1
+                brick_id = next_brick_id
+                next_brick_id += 1
 
             self._classify_and_save(image_idx, brick_id, detection_result)
 
@@ -93,9 +101,6 @@ class AsyncOrdering:
         self.bricks[brick_id].analysis_results_list.append(analysis_result)
 
         self.classification_worker.enqueue((brick_id, detection_id, cropped_image))
-
-        # TODO: add image storing option
-        self.images.pop(image_idx)
 
     def on_classification(self, brick_id: int, detection_id: int, classification_result: ClassificationResult):
         self.bricks[brick_id].analysis_results_list[detection_id].merge_classification_result(classification_result)
@@ -168,11 +173,11 @@ class AsyncOrdering:
                previous_detection.y_max <= current_detection.y_max
 
     def export_history_to_csv(self, file_path: str):
-        results_list = []
+        results_list = {}
         for brick_id in self.bricks.keys():
-            results_list.extend(self.bricks[brick_id].to_list_of_dicts())
+            results_list.update(self.bricks[brick_id].to_dict())
 
-        df = pd.DataFrame.from_dict(results_list)
+        df = pd.DataFrame.from_dict(results_list).transpose()
 
         if not os.path.isdir(os.path.dirname(file_path)):
             os.makedirs(os.path.dirname(file_path))

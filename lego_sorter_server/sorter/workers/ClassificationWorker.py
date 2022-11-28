@@ -15,11 +15,19 @@ class ClassificationWorker(Worker):
         self.analysis_service: AnalysisService = analysis_service
         self.set_callback(callback)
         self.set_target_method(self.__classify)
+        self._head_brick_idx = 0
 
     def enqueue(self, item: Tuple[int, int, Image]):
         super(ClassificationWorker, self).enqueue(item)
 
+    def set_head_brick_idx(self, new_idx: int):
+        self._head_brick_idx = new_idx
+
     def __classify(self, brick_id: int, detection_id: int, image: Image):
+        # brick_id < head_idx ==> brick has already been sorted (passed the camera line)
+        if brick_id < self._head_brick_idx:
+            return
+
         classification_results_list: ClassificationResultsList = self.analysis_service.classify([image])
 
         if len(classification_results_list) == 0:
