@@ -23,6 +23,7 @@ class KerasClassifier(LegoClassifier):
     def __init__(self, model_path=os.path.join("lego_sorter_server", "analysis", "classification", "models",
                                                "keras_model", "447_classes.h5")):
         super().__init__()
+        tf.get_logger().setLevel('ERROR')
         self.model_path = model_path
         self.model = None
         self.initialized = False
