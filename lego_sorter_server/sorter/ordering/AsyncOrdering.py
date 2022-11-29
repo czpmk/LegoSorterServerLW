@@ -27,7 +27,7 @@ class AsyncOrdering:
         # self.bricks: OrderedDict[int, AnalysisResultsList] = OrderedDict()
         '''Ordered dict of all the bricks, sorted and in process'''
 
-        self.head_image_idx = -1
+        self.head_image_idx = 0
         '''Index of the last image received'''
         self.images: OrderedDict[int, Image] = OrderedDict()
         '''OrderedDict of images, format - key = image_id: int, value = image: Image'''
@@ -54,21 +54,48 @@ class AsyncOrdering:
         # check if any brick has passed the camera line - trigger sorter
         bricks_passed_the_camera_line = self._get_bricks_passed_the_camera_line(detection_results_list)
         if len(bricks_passed_the_camera_line) > 0:
-            self.head_brick_idx = max(bricks_passed_the_camera_line) + 1
-            self.classification_worker.set_head_brick_idx(self.head_brick_idx)
-
+            self.set_new_head_brick_idx(bricks_passed_the_camera_line)
             self._sort(bricks_passed_the_camera_line)
+
+            for brick_id in bricks_passed_the_camera_line:
+                self.conveyor_state.pop(brick_id)
 
         self._prepare_for_classification(image_idx, detection_results_list)
         # TODO: add image storing option
         self.images.pop(image_idx)
+
+    def set_new_head_brick_idx(self, bricks_sent_to_sorter: List[int]):
+        """
+        bricks_sent_to_sorter: list of brick indexes, assumed to be a subset of conveyor_state
+        """
+        if len(bricks_sent_to_sorter) == 0:
+            logging.error(
+                '[AsyncOrdering] Invalid invocation of "set_new_head_brick_idx" method: empty list of bricks '
+                'received (shall only be called when bricks pass the camera line)')
+
+        # All bricks passed the camera line
+        elif len(bricks_sent_to_sorter) == len(self.conveyor_state):
+            self.head_brick_idx = max(bricks_sent_to_sorter) + 1
+
+        # Only some of the last conveyor_state bricks passed the camera line
+        elif len(bricks_sent_to_sorter) != len(self.conveyor_state):
+            self.head_brick_idx = min([x for x in self.conveyor_state.keys() if x not in bricks_sent_to_sorter])
+
+        self.classification_worker.set_head_brick_idx(self.head_brick_idx)
 
     def _prepare_for_classification(self, image_idx: int, detection_results_list: DetectionResultsList):
         previous_first_brick_id, previous_first_detection_box = self._get_first_brick_from_conveyor_state()
 
         new_conveyor_state: OrderedDict[int, DetectionBox] = OrderedDict()
 
-        next_brick_id = self.head_brick_idx
+        if len(self.bricks.keys()) == 0:
+            next_brick_id = self.head_brick_idx
+        else:
+            next_brick_id = next(reversed(self.bricks.keys())) + 1
+
+        print(
+            'IMAGE ID: {0} '
+            '===================================================================================='.format(image_idx))
 
         for detection_result in detection_results_list:
             # check if detected bricks are already on the conveyor belt
@@ -76,11 +103,12 @@ class AsyncOrdering:
                     self._is_the_same_brick(previous_first_detection_box, detection_result.detection_box):
                 brick_id = previous_first_brick_id
                 previous_first_brick_id, previous_first_detection_box = self._get_first_brick_from_conveyor_state()
+                print('OLD BRICK: {0}'.format(brick_id))
 
             else:
-                # self.head_brick_idx += 1
                 brick_id = next_brick_id
                 next_brick_id += 1
+                print('NEW BRICK: {0}'.format(brick_id))
 
             self._classify_and_save(image_idx, brick_id, detection_result)
 
@@ -152,13 +180,14 @@ class AsyncOrdering:
 
         else:
             bricks_passed_camera_line = list(filter(
-                lambda brick_id: not self._is_the_same_brick(self.conveyor_state[brick_id],
-                                                             current_first_detection.detection_box),
+                lambda x: not self._is_the_same_brick(self.conveyor_state[x], current_first_detection.detection_box),
                 self.conveyor_state.keys())
             )
+        print('-------------------------------------------------------------------------------------')
+        print('PREVIOUS DETECTIONS: ' + ', '.join([str(x) for x in list(self.conveyor_state.keys())]))
+        print('PASSED CAMERA LINE : ' + ', '.join([str(x) for x in list(bricks_passed_camera_line)]))
+        print('-------------------------------------------------------------------------------------')
 
-        for brick_id in bricks_passed_camera_line:
-            self.conveyor_state.pop(brick_id)
         return bricks_passed_camera_line
 
     def _get_first_brick_from_conveyor_state(self) -> Tuple[Optional[int], Optional[DetectionBox]]:
