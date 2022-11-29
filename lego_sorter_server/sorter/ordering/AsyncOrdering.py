@@ -121,10 +121,11 @@ class AsyncOrdering:
 
         brick_id = brick_id_list[0]
         analysis_result = self._get_analysis_result(brick_id)
-        self.bricks[brick_id].final_classification_class = analysis_result.classification_class
+        if analysis_result is None:
+            return
 
-        if analysis_result is not None:
-            self.sorting_worker.enqueue((brick_id, analysis_result))
+        self.bricks[brick_id].final_classification_class = analysis_result.classification_class
+        self.sorting_worker.enqueue((brick_id, analysis_result))
 
         # TODO: rest of the logic - stats
 
