@@ -93,22 +93,16 @@ class AsyncOrdering:
         else:
             next_brick_id = next(reversed(self.bricks.keys())) + 1
 
-        print(
-            'IMAGE ID: {0} '
-            '===================================================================================='.format(image_idx))
-
         for detection_result in detection_results_list:
             # check if detected bricks are already on the conveyor belt
             if previous_first_detection_box is not None and \
                     self._is_the_same_brick(previous_first_detection_box, detection_result.detection_box):
                 brick_id = previous_first_brick_id
                 previous_first_brick_id, previous_first_detection_box = self._get_first_brick_from_conveyor_state()
-                print('OLD BRICK: {0}'.format(brick_id))
 
             else:
                 brick_id = next_brick_id
                 next_brick_id += 1
-                print('NEW BRICK: {0}'.format(brick_id))
 
             self._classify_and_save(image_idx, brick_id, detection_result)
 
@@ -183,10 +177,6 @@ class AsyncOrdering:
                 lambda x: not self._is_the_same_brick(self.conveyor_state[x], current_first_detection.detection_box),
                 self.conveyor_state.keys())
             )
-        print('-------------------------------------------------------------------------------------')
-        print('PREVIOUS DETECTIONS: ' + ', '.join([str(x) for x in list(self.conveyor_state.keys())]))
-        print('PASSED CAMERA LINE : ' + ', '.join([str(x) for x in list(bricks_passed_camera_line)]))
-        print('-------------------------------------------------------------------------------------')
 
         return bricks_passed_camera_line
 
