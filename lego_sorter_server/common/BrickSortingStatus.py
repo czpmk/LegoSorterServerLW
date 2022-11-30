@@ -6,6 +6,7 @@ class BrickSortingStatus:
         self.brick_id = brick_id
         self.analysis_results_list: AnalysisResultsList = AnalysisResultsList()
         self.detected = False
+        # TODO: remove? not used
         self.classified = False
         self.final_classification_class = None
         self.sorted = False
@@ -17,7 +18,7 @@ class BrickSortingStatus:
                 'brick_id': self.brick_id,
                 'result_id': brick_result_id,
                 'detected': str(self.detected),
-                'classified': str(self.classified),
+                'classified': self.analysis_results_list[brick_result_id].classification_class is not None,
                 'sorted': str(self.sorted),
                 'final_classification_class': str(self.final_classification_class),
             }
