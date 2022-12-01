@@ -7,11 +7,10 @@ from lego_sorter_server.sorter.workers.Worker import Worker
 
 
 class SortingWorker(Worker):
-    def __init__(self, sorter_controller: LegoSorterController, callback: Callable[[int], None]):
+    def __init__(self, sorter_controller: LegoSorterController):
         super().__init__()
 
         self.sorter_controller: LegoSorterController = sorter_controller
-        self.set_callback(callback)
         self.set_target_method(self.__sort)
 
         self._target_method = self.__sort
@@ -26,6 +25,9 @@ class SortingWorker(Worker):
     def stop(self):
         self.sorter_controller.stop_conveyor()
         super(SortingWorker, self).stop()
+
+    def set_callback(self, callback: Callable[[int], None]):
+        self._callback = callback
 
     def __sort(self, brick_id: int, analysis_result: AnalysisResult):
         self.sorter_controller.on_brick_recognized(analysis_result)
