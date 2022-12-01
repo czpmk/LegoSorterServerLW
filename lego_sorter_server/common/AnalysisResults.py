@@ -1,10 +1,19 @@
-from typing import List, Dict, Any
+from enum import Enum
+from math import ceil, floor
+from statistics import median
+from typing import List, Dict, Any, Optional
 
 from PIL.Image import Image
 
 from lego_sorter_server.analysis.detection import DetectionUtils
 from lego_sorter_server.common.ClassificationResults import ClassificationResult, ClassificationResultsList
 from lego_sorter_server.common.DetectionResults import DetectionBox, DetectionResult, DetectionResultsList
+
+
+class ClassificationStrategy(Enum):
+    MEDIAN = 1
+    BEST = 2
+    WORST = 3
 
 
 class AnalysisResult:
@@ -85,3 +94,19 @@ class AnalysisResultsList(List[AnalysisResult]):
                 for detection_result in detection_results_list
             ]
         )
+
+    def get_classified(self):
+        return AnalysisResultsList([x for x in self if x.classification_class is not None])
+
+    def get_result(self, strategy: ClassificationStrategy) -> Optional[AnalysisResult]:
+        subset: AnalysisResultsList = self.get_classified()
+        if len(subset) == 0:
+            return None
+
+        subset.sort(key=lambda x: x.classification_class, reverse=True)
+
+        return {
+            ClassificationStrategy.MEDIAN: subset[floor(len(subset) / 2)],
+            ClassificationStrategy.BEST: subset[0],
+            ClassificationStrategy.WORST: subset[-1]
+        }.get(strategy, None)
