@@ -7,24 +7,26 @@ import pandas as pd
 from PIL.Image import Image
 
 from lego_sorter_server.analysis.detection import DetectionUtils
-from lego_sorter_server.common.AnalysisResults import AnalysisResultsList, AnalysisResult
+from lego_sorter_server.common.AnalysisResults import AnalysisResultsList, AnalysisResult, ClassificationStrategy
 from lego_sorter_server.common.BrickSortingStatus import BrickSortingStatus
 from lego_sorter_server.common.ClassificationResults import ClassificationResult
 from lego_sorter_server.common.DetectionResults import DetectionResultsList, DetectionResult, DetectionBox
 from lego_sorter_server.sorter.workers.ClassificationWorker import ClassificationWorker
+from lego_sorter_server.sorter.workers.DetectionWorker import DetectionWorker
 from lego_sorter_server.sorter.workers.SortingWorker import SortingWorker
 
 
 class AsyncOrdering:
     def __init__(self):
+        self.classification_strategy = ClassificationStrategy.MEDIAN
+        '''Determines the way of obtaining the single classification class based of multiple results'''
+
         self.conveyor_state: OrderedDict[int, DetectionBox] = OrderedDict()
         '''Bricks on the conveyor belt, format - key: brick_id: int, value = detection_box: DetectionBox'''
 
-        # TODO: fix - head_brick_idx should be idx of the brick closest to the camera line, not last idx of the brick
         self.head_brick_idx = 0
         '''Index of first brick on the tape'''
         self.bricks: OrderedDict[int, BrickSortingStatus] = OrderedDict()
-        # self.bricks: OrderedDict[int, AnalysisResultsList] = OrderedDict()
         '''Ordered dict of all the bricks, sorted and in process'''
 
         self.head_image_idx = 0
@@ -36,12 +38,20 @@ class AsyncOrdering:
         '''OrderedDict of DetectionResults and Images, format - key = image_id: int, 
         value = List[Tuple] (DetectionResult, Image)'''
 
+        self.detection_worker: Optional[DetectionWorker] = None
         self.classification_worker: Optional[ClassificationWorker] = None
         self.sorting_worker: Optional[SortingWorker] = None
 
-    def add_workers(self, classification_worker: ClassificationWorker, sorting_worker: SortingWorker):
+    def add_workers(self, detection_worker: DetectionWorker, classification_worker: ClassificationWorker,
+                    sorting_worker: SortingWorker):
+        self.detection_worker = detection_worker
         self.classification_worker = classification_worker
         self.sorting_worker = sorting_worker
+
+        # Set callbacks
+        self.detection_worker.set_callback(self.on_detection)
+        self.classification_worker.set_callback(self.on_classification)
+        self.sorting_worker.set_callback(self.on_sort)
 
     def add_image(self, image: Image) -> int:
         self.head_image_idx += 1
@@ -51,37 +61,39 @@ class AsyncOrdering:
     def on_detection(self, image_idx: int, detection_results_list: DetectionResultsList):
         detection_results_list.sort(key=lambda x: x.detection_box.y_min, reverse=True)
 
-        # check if any brick has passed the camera line - trigger sorter
-        bricks_passed_the_camera_line = self._get_bricks_passed_the_camera_line(detection_results_list)
-        if len(bricks_passed_the_camera_line) > 0:
-            self.set_new_head_brick_idx(bricks_passed_the_camera_line)
-            self._sort(bricks_passed_the_camera_line)
-
-            for brick_id in bricks_passed_the_camera_line:
-                self.conveyor_state.pop(brick_id)
+        # send sort order to sorter, remove bricks from self.conveyor_state etc.
+        self._process_bricks_passed_the_camera_line(detection_results_list)
 
         self._prepare_for_classification(image_idx, detection_results_list)
         # TODO: add image storing option
         self.images.pop(image_idx)
 
-    def set_new_head_brick_idx(self, bricks_sent_to_sorter: List[int]):
-        """
-        bricks_sent_to_sorter: list of brick indexes, assumed to be a subset of conveyor_state
-        """
-        if len(bricks_sent_to_sorter) == 0:
-            logging.error(
-                '[AsyncOrdering] Invalid invocation of "set_new_head_brick_idx" method: empty list of bricks '
-                'received (shall only be called when bricks pass the camera line)')
+    def on_classification(self, brick_id: int, detection_id: int, classification_result: ClassificationResult):
+        self.bricks[brick_id].analysis_results_list[detection_id].merge_classification_result(classification_result)
+        self.bricks[brick_id].classified = True
 
-        # All bricks passed the camera line
-        elif len(bricks_sent_to_sorter) == len(self.conveyor_state):
-            self.head_brick_idx = max(bricks_sent_to_sorter) + 1
+    def on_sort(self, brick_id):
+        self.bricks[brick_id].sorted = True
 
-        # Only some of the last conveyor_state bricks passed the camera line
-        elif len(bricks_sent_to_sorter) != len(self.conveyor_state):
-            self.head_brick_idx = min([x for x in self.conveyor_state.keys() if x not in bricks_sent_to_sorter])
+    def _process_bricks_passed_the_camera_line(self, current_detection_results: DetectionResultsList):
+        current_first_detection = current_detection_results[0] if len(current_detection_results) > 0 else None
 
-        self.classification_worker.set_head_brick_idx(self.head_brick_idx)
+        if current_first_detection is None:
+            bricks_passed_camera_line = list(self.conveyor_state.keys())
+
+        else:
+            bricks_passed_camera_line = list(filter(
+                lambda x: not self._is_the_same_brick(self.conveyor_state[x],
+                                                      current_first_detection.detection_box),
+                self.conveyor_state.keys())
+            )
+
+        if len(bricks_passed_camera_line) > 0:
+            self._set_new_head_brick_idx(bricks_passed_camera_line)
+            self._send_to_sorter(bricks_passed_camera_line)
+
+            for brick_id in bricks_passed_camera_line:
+                self.conveyor_state.pop(brick_id)
 
     def _prepare_for_classification(self, image_idx: int, detection_results_list: DetectionResultsList):
         previous_first_brick_id, previous_first_detection_box = self._get_first_brick_from_conveyor_state()
@@ -105,10 +117,29 @@ class AsyncOrdering:
                 next_brick_id += 1
 
             self._classify_and_save(image_idx, brick_id, detection_result)
-
             new_conveyor_state[brick_id] = detection_result.detection_box
 
         self.conveyor_state = new_conveyor_state
+
+    def _set_new_head_brick_idx(self, bricks_sent_to_sorter: List[int]):
+        """
+        bricks_sent_to_sorter: list of brick indexes, assumed to be a subset of conveyor_state
+        """
+        if len(bricks_sent_to_sorter) == 0:
+            logging.error(
+                '[AsyncOrdering] Invalid invocation of "set_new_head_brick_idx" method: empty list of bricks '
+                'received (shall only be called when bricks pass the camera line)')
+            return
+
+        # All bricks passed the camera line
+        if len(bricks_sent_to_sorter) == len(self.conveyor_state):
+            self.head_brick_idx = max(bricks_sent_to_sorter) + 1
+
+        # Only some of the last conveyor_state bricks passed the camera line
+        elif len(bricks_sent_to_sorter) != len(self.conveyor_state):
+            self.head_brick_idx = min([x for x in self.conveyor_state.keys() if x not in bricks_sent_to_sorter])
+
+        self.classification_worker.set_head_brick_idx(self.head_brick_idx)
 
     def _classify_and_save(self, image_idx: int, brick_id: int, detection_result: DetectionResult):
         cropped_image = DetectionUtils.crop_with_margin_from_detection_box(self.images[image_idx],
@@ -124,14 +155,7 @@ class AsyncOrdering:
 
         self.classification_worker.enqueue((brick_id, detection_id, cropped_image))
 
-    def on_classification(self, brick_id: int, detection_id: int, classification_result: ClassificationResult):
-        self.bricks[brick_id].analysis_results_list[detection_id].merge_classification_result(classification_result)
-        self.bricks[brick_id].classified = True
-
-    def on_sort(self, brick_id):
-        self.bricks[brick_id].sorted = True
-
-    def _sort(self, brick_id_list: List[int]):
+    def _send_to_sorter(self, brick_id_list: List[int]):
         if len(brick_id_list) == 0:
             logging.error('[AsyncOrdering] Internal error - empty list of brick_id received')
             return
@@ -149,8 +173,6 @@ class AsyncOrdering:
         self.bricks[brick_id].final_classification_class = analysis_result.classification_class
         self.sorting_worker.enqueue((brick_id, analysis_result))
 
-        # TODO: rest of the logic - stats
-
     def _get_analysis_result(self, brick_id) -> Optional[AnalysisResult]:
         analysis_results_list = self.bricks[brick_id].analysis_results_list
         analysis_results_list_classified: AnalysisResultsList = AnalysisResultsList(
@@ -161,24 +183,7 @@ class AsyncOrdering:
             logging.warning('[AsyncOrdering] Attempting to sort a brick which lacks classification results')
             return None
 
-        # get by best score
-        # TODO: add other options
-        analysis_results_list_classified.sort(key=lambda result: result.classification_score, reverse=True)
-        return analysis_results_list_classified[0]
-
-    def _get_bricks_passed_the_camera_line(self, current_detection_results: DetectionResultsList) -> List[int]:
-        current_first_detection = current_detection_results[0] if len(current_detection_results) > 0 else None
-
-        if current_first_detection is None:
-            bricks_passed_camera_line = list(self.conveyor_state.keys())
-
-        else:
-            bricks_passed_camera_line = list(filter(
-                lambda x: not self._is_the_same_brick(self.conveyor_state[x], current_first_detection.detection_box),
-                self.conveyor_state.keys())
-            )
-
-        return bricks_passed_camera_line
+        return analysis_results_list_classified.get_result(self.classification_strategy)
 
     def _get_first_brick_from_conveyor_state(self) -> Tuple[Optional[int], Optional[DetectionBox]]:
         if len(self.conveyor_state) == 0:
