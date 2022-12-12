@@ -2,6 +2,7 @@ import logging
 import os
 from collections import OrderedDict
 from typing import List, Tuple, Optional
+from datetime import datetime
 
 import pandas as pd
 from PIL.Image import Image
@@ -33,6 +34,10 @@ class AsyncOrdering:
         '''Index of the last image received'''
         self.images: OrderedDict[int, Image] = OrderedDict()
         '''OrderedDict of images, format - key = image_id: int, value = image: Image'''
+        self.enqueue_times: OrderedDict[int, datetime] = OrderedDict()
+        '''OrderedDict of timestamps, format - kye = image_id: int, value = timestamp: float'''
+        self.detection_times: OrderedDict[int, datetime] = OrderedDict()
+        '''OrderedDict of timestamps, format - kye = image_id: int, value = timestamp: float'''
 
         self.cropped_images: OrderedDict[int, List[Tuple[DetectionResult, Image]]] = OrderedDict()
         '''OrderedDict of DetectionResults and Images, format - key = image_id: int, 
@@ -56,9 +61,11 @@ class AsyncOrdering:
     def add_image(self, image: Image) -> int:
         self.head_image_idx += 1
         self.images[self.head_image_idx] = image
+        self.enqueue_times[self.head_image_idx] = datetime.now()
         return self.head_image_idx
 
     def on_detection(self, image_idx: int, detection_results_list: DetectionResultsList):
+        self.detection_times[image_idx] = datetime.now()
         detection_results_list.sort(key=lambda x: x.detection_box.y_min, reverse=True)
 
         # send sort order to sorter, remove bricks from self.conveyor_state etc.
@@ -69,10 +76,12 @@ class AsyncOrdering:
         self.images.pop(image_idx)
 
     def on_classification(self, brick_id: int, detection_id: int, classification_result: ClassificationResult):
+        self.bricks[brick_id].analysis_results_list[detection_id].time_classified = datetime.now()
         self.bricks[brick_id].analysis_results_list[detection_id].merge_classification_result(classification_result)
         self.bricks[brick_id].classified = True
 
     def on_sort(self, brick_id):
+        self.bricks[brick_id].time_sorted = datetime.now()
         self.bricks[brick_id].sorted = True
 
     def _process_bricks_passed_the_camera_line(self, current_detection_results: DetectionResultsList):
@@ -116,7 +125,7 @@ class AsyncOrdering:
                 brick_id = next_brick_id
                 next_brick_id += 1
 
-            self._classify_and_save(image_idx, brick_id, detection_result)
+            self._store_results_and_enqueue_for_classification(image_idx, brick_id, detection_result)
             new_conveyor_state[brick_id] = detection_result.detection_box
 
         self.conveyor_state = new_conveyor_state
@@ -141,14 +150,17 @@ class AsyncOrdering:
 
         self.classification_worker.set_head_brick_idx(self.head_brick_idx)
 
-    def _classify_and_save(self, image_idx: int, brick_id: int, detection_result: DetectionResult):
+    def _store_results_and_enqueue_for_classification(self, image_idx: int, brick_id: int,
+                                                      detection_result: DetectionResult):
         cropped_image = DetectionUtils.crop_with_margin_from_detection_box(self.images[image_idx],
                                                                            detection_result.detection_box)
-        analysis_result = AnalysisResult.from_detection_result(detection_result, cropped_image)
+        analysis_result = AnalysisResult.from_detection_with_image(detection_result, cropped_image)
+        analysis_result.time_enqueued = self.enqueue_times[image_idx]
+        analysis_result.time_detected = self.detection_times[image_idx]
+        analysis_result.image_id = image_idx
 
         if brick_id not in self.bricks.keys():
             self.bricks[brick_id] = BrickSortingStatus(brick_id)
-            self.bricks[brick_id].detected = True
 
         detection_id = len(self.bricks[brick_id].analysis_results_list)
         self.bricks[brick_id].analysis_results_list.append(analysis_result)
@@ -195,7 +207,7 @@ class AsyncOrdering:
     @staticmethod
     def _is_the_same_brick(previous_detection: DetectionBox, current_detection: DetectionBox) -> bool:
         return previous_detection.y_min <= current_detection.y_min or \
-               previous_detection.y_max <= current_detection.y_max
+            previous_detection.y_max <= current_detection.y_max
 
     def export_history_to_csv(self, file_path: str):
         results_list = {}

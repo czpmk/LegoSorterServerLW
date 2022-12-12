@@ -1,6 +1,6 @@
+from datetime import datetime
 from enum import Enum
-from math import ceil, floor
-from statistics import median
+from math import floor
 from typing import List, Dict, Any, Optional
 
 from PIL.Image import Image
@@ -23,26 +23,27 @@ class AnalysisResult:
                  detection_class: str = None,
                  classification_score: float = None,
                  classification_class: str = None,
-                 image: Image = None):
+                 image_id: int = None,
+                 image: Image = None,
+                 time_enqueued: datetime = None,
+                 time_detected: datetime = None,
+                 time_classified: datetime = None,
+                 time_sorted: datetime = None):
         self.detection_box: DetectionBox = detection_box
         self.detection_score: float = detection_score
         self.detection_class: str = detection_class
         self.classification_score: float = classification_score
         self.classification_class: str = classification_class
+        self.image_id: int = image_id
         self.image: Image = image
+        self.time_enqueued: datetime = time_enqueued
+        self.time_detected: datetime = time_detected
+        self.time_classified: datetime = time_classified
+        self.time_sorted: datetime = time_sorted
 
     @classmethod
-    def from_detection_result(cls, detection_result: DetectionResult, image: Image):
-        return cls(
-            detection_box=detection_result.detection_box,
-            detection_class=detection_result.detection_class,
-            detection_score=detection_result.detection_score,
-            image=image
-        )
-
-    @classmethod
-    def from_detection_and_classification_result(cls, classification_result: ClassificationResult,
-                                                 detection_result: DetectionResult):
+    def from_results(cls, classification_result: ClassificationResult,
+                     detection_result: DetectionResult):
         return cls(
             detection_box=detection_result.detection_box,
             detection_class=detection_result.detection_class,
@@ -51,16 +52,29 @@ class AnalysisResult:
             classification_class=classification_result.classification_class
         )
 
+    @classmethod
+    def from_detection_with_image(cls, detection_result: DetectionResult, image: Image):
+        return cls(
+            detection_box=detection_result.detection_box,
+            detection_class=detection_result.detection_class,
+            detection_score=detection_result.detection_score,
+            image=image
+        )
+
     def merge_classification_result(self, classification_result: ClassificationResult):
         self.classification_score = classification_result.classification_score
         self.classification_class = classification_result.classification_class
 
     def to_dict(self) -> Dict[str, Any]:
         analysis_result = {
+            'time_enqueued': self.time_enqueued.strftime('%H:%M:%S.%f') if self.time_enqueued is not None else None,
+            'time_detected': self.time_detected.strftime('%H:%M:%S.%f') if self.time_detected is not None else None,
+            'time_classified': self.time_classified.strftime('%H:%M:%S.%f') if self.time_classified is not None else None,
+            'image_id': self.image_id,
             'classification_class': self.classification_class,
             'classification_score': self.classification_score,
             'detection_class': self.detection_class,
-            'detection_score': self.detection_score
+            'detection_score': self.detection_score,
         }
         analysis_result.update({'detection_box.{0}'.format(k): v for k, v in self.detection_box.to_dict().items()})
         return analysis_result
@@ -68,14 +82,14 @@ class AnalysisResult:
 
 class AnalysisResultsList(List[AnalysisResult]):
     @classmethod
-    def results_merged(cls, classification_results: ClassificationResultsList,
-                       detection_results: DetectionResultsList):
+    def from_results_lists(cls, classification_results: ClassificationResultsList,
+                           detection_results: DetectionResultsList):
         assert len(classification_results) \
                == len(detection_results)
 
         return cls(
             [
-                AnalysisResult.from_detection_and_classification_result(
+                AnalysisResult.from_results(
                     classification_result=classification_results[idx],
                     detection_result=detection_results[idx]
                 ) for idx in range(len(classification_results))
@@ -83,13 +97,12 @@ class AnalysisResultsList(List[AnalysisResult]):
         )
 
     @classmethod
-    def from_detection_results_with_image(cls, detection_results_list: DetectionResultsList, image: Image):
+    def from_detections_with_image(cls, detection_results_list: DetectionResultsList, image: Image):
         return cls(
             [
-                AnalysisResult.from_detection_result(
-                    detection_result,
-                    DetectionUtils.crop_with_margin_from_detection_box(image,
-                                                                       detection_result.detection_box)
+                AnalysisResult.from_detection_with_image(
+                    detection_result=detection_result,
+                    image=DetectionUtils.crop_with_margin_from_detection_box(image, detection_result.detection_box)
                 )
                 for detection_result in detection_results_list
             ]
