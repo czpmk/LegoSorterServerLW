@@ -69,7 +69,8 @@ class AnalysisResult:
         analysis_result = {
             'time_enqueued': self.time_enqueued.strftime('%H:%M:%S.%f') if self.time_enqueued is not None else None,
             'time_detected': self.time_detected.strftime('%H:%M:%S.%f') if self.time_detected is not None else None,
-            'time_classified': self.time_classified.strftime('%H:%M:%S.%f') if self.time_classified is not None else None,
+            'time_classified': self.time_classified.strftime(
+                '%H:%M:%S.%f') if self.time_classified is not None else None,
             'image_id': self.image_id,
             'classification_class': self.classification_class,
             'classification_score': self.classification_score,
@@ -78,6 +79,15 @@ class AnalysisResult:
         }
         analysis_result.update({'detection_box.{0}'.format(k): v for k, v in self.detection_box.to_dict().items()})
         return analysis_result
+
+    def __str__(self):
+        return '[detection_box: {0}, detection_score: {1}, ' \
+               'classification_class: {2}, classification_score: {3}]'.format(
+            self.detection_box.__str__(),
+            self.detection_score,
+            self.classification_class,
+            self.classification_score,
+        )
 
 
 class AnalysisResultsList(List[AnalysisResult]):
@@ -123,3 +133,9 @@ class AnalysisResultsList(List[AnalysisResult]):
             ClassificationStrategy.BEST: subset[0],
             ClassificationStrategy.WORST: subset[-1]
         }.get(strategy, None)
+
+    def __str__(self):
+        concat_list = 'AnalysisResultList:\n'
+        for res in self:
+            concat_list += '\t' + res.__str__() + '\n'
+        return concat_list
