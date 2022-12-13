@@ -64,7 +64,7 @@ class SortingProcessor:
 
         detected_count = len(detection_results)
         if detected_count == 0:
-            return []
+            return AnalysisResultsList()
 
         logging.info(f"[SortingProcessor] Detected a lego brick, processing...")
 
@@ -72,7 +72,7 @@ class SortingProcessor:
             logging.warning(f"[SortingProcessor] More than one brick detected '(detected_count = {detected_count}), "
                             f"there should be only one brick on the tape at the same time.")
 
-        analysis_results = AnalysisResultsList.results_merged(
+        analysis_results = AnalysisResultsList.from_results_lists(
             classification_results=classification_results,
             detection_results=detection_results
         )
