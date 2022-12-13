@@ -1,12 +1,11 @@
 import logging
-from queue import Queue, Empty
-from threading import Thread
+from multiprocessing import Process, Queue
 from typing import Callable
 
 
 class Worker:
     def __init__(self):
-        self._thread: Thread = Thread()
+        self._process: Process = Process()
         self._queue: Queue = Queue()
         self._target_method: Callable = lambda queue_object: None
         '''Override in init method.'''
@@ -21,8 +20,8 @@ class Worker:
             return
 
         self._running = True
-        self._thread: Thread = Thread(target=self.run)
-        self._thread.start()
+        self._process: Process = Process(target=self.run)
+        self._process.start()
 
     def stop(self):
         if self._running is False:
@@ -30,9 +29,9 @@ class Worker:
             return
 
         self._running = False
-        if self._thread.is_alive():
-            self._thread.join(1)
-        logging.info('[{0}] Stopping thread (Queue size: {1})'.format(self._type(), self._queue.qsize()))
+        if self._process.is_alive():
+            self._process.join(1)
+        logging.info('[{0}] Stopping process (Queue size: {1})'.format(self._type(), self._queue.qsize()))
 
     def clear_queue(self):
         logging.info('[{0}] Clearing queue (Queue size: {1})'.format(self._type(), self._queue.qsize()))
@@ -48,10 +47,10 @@ class Worker:
 
     def run(self):
         while self._running:
-            try:
-                queue_object = self._queue.get(timeout=0.5)
-            except Empty:
+            if self._queue.empty():
                 continue
+
+            queue_object = self._queue.get(timeout=0.5)
 
             self._target_method(*queue_object)
 
