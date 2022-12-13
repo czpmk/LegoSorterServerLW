@@ -1,7 +1,10 @@
 import logging
+from queue import Empty
 from typing import Callable, Tuple, Optional
 
 from PIL.Image import Image
+
+from multiprocessing import Queue
 
 from lego_sorter_server.analysis.AnalysisService import AnalysisService
 from lego_sorter_server.common.ClassificationResults import ClassificationResult, ClassificationResultsList
@@ -25,28 +28,38 @@ class ClassificationWorker(Worker):
     def set_callback(self, callback: Callable[[int, int, Optional[ClassificationResult]], None]):
         self._callback = callback
 
-    def __classify(self, brick_id: int, detection_id: int, image: Image):
-        # brick_id < head_idx ==> brick has already been sorted (passed the camera line)
-        if brick_id < self._head_brick_idx:
-            logging.info('[{0}] SKIPPING - BRICK ALREADY PASSED THE CAMERA LINE'.format(self._type(), brick_id))
-            return
+    def __classify(self, queue_in: Queue, queue_out: Queue):  # brick_id: int, detection_id: int, image: Image):
+        while self._running:
+            try:
+                brick_id, detection_id, image = queue_in.get()
 
-        classification_results_list: ClassificationResultsList = self.analysis_service.classify([image])
+                # brick_id < head_idx ==> brick has already been sorted (passed the camera line)
+                if brick_id < self._head_brick_idx:
+                    logging.info('[{0}] SKIPPING - BRICK ALREADY PASSED THE CAMERA LINE'.format(self._type(), brick_id))
+                    return
 
-        if len(classification_results_list) == 0:
-            logging.error('[{0}] Empty classification result received for brick {1} from '
-                          'AnalysisService.classify().'.format(self._type(), brick_id,
-                                                               len(classification_results_list)))
-            self._callback(brick_id, detection_id, None)
+                classification_results_list: ClassificationResultsList = self.analysis_service.classify([image])
 
-        elif len(classification_results_list) != 1:
-            logging.error('[{0}] Invalid number of classification results: {0}, 1 expected. '
-                          'Discarding all but first result'.format(self._type(), len(classification_results_list)))
-            self._callback(brick_id, detection_id, None)
+                if len(classification_results_list) == 0:
+                    logging.error('[{0}] Empty classification result received for brick {1} from '
+                                  'AnalysisService.classify().'.format(self._type(), brick_id,
+                                                                       len(classification_results_list)))
+                    queue_out.put((brick_id, detection_id, None))
+                    # self._callback(brick_id, detection_id, None)
 
-        else:
-            logging.debug('[{0}] Classification result: {1}, '
-                          'score: {2}.'.format(self._type(),
-                                               classification_results_list[0].classification_class,
-                                               classification_results_list[0].classification_score))
-            self._callback(brick_id, detection_id, classification_results_list[0])
+                elif len(classification_results_list) != 1:
+                    logging.error('[{0}] Invalid number of classification results: {0}, 1 expected. '
+                                  'Discarding all but first result'.format(self._type(),
+                                                                           len(classification_results_list)))
+                    queue_out.put((brick_id, detection_id, None))
+                    # self._callback(brick_id, detection_id, None)
+
+                else:
+                    logging.debug('[{0}] Classification result: {1}, '
+                                  'score: {2}.'.format(self._type(),
+                                                       classification_results_list[0].classification_class,
+                                                       classification_results_list[0].classification_score))
+                    queue_out.put((brick_id, detection_id, classification_results_list[0]))
+                    # self._callback(brick_id, detection_id, classification_results_list[0])
+            except Empty:
+                continue
