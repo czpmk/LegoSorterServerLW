@@ -2,7 +2,7 @@ import logging
 from queue import Empty
 from typing import Callable, Tuple
 
-from multiprocessing import Queue
+from torch.multiprocessing import Queue
 
 from lego_sorter_server.common.AnalysisResults import AnalysisResult
 from lego_sorter_server.sorter.LegoSorterController import LegoSorterController
@@ -10,9 +10,9 @@ from lego_sorter_server.sorter.workers.Worker import Worker
 
 
 class SortingWorker(Worker):
-    def __init__(self, sorter_controller: LegoSorterController):
+    def __init__(self, sorter_controller: LegoSorterController, multiprocessing: bool):
         super().__init__()
-
+        self._multiprocessing = multiprocessing
         self.sorter_controller: LegoSorterController = sorter_controller
         self.set_target_method(self.__sort)
 
@@ -38,7 +38,7 @@ class SortingWorker(Worker):
                 brick_id, analysis_result = queue_in.get()
                 self.sorter_controller.on_brick_recognized(analysis_result)
                 logging.debug('[{0}] Bricks {1} sorted.'.format(self._type(), brick_id))
-                queue_out.put(brick_id)
+                queue_out.put((brick_id,))
                 # self._callback(brick_id)
             except Empty:
                 continue

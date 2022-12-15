@@ -21,9 +21,9 @@ class AsyncSortingProcessor:
         self.sorter_controller: LegoSorterController = LegoSorterController(brick_category_config)
         self.ordering: AsyncOrdering = AsyncOrdering()
 
-        self.detection_worker: DetectionWorker = DetectionWorker(self.analysis_service)
-        self.classification_worker: ClassificationWorker = ClassificationWorker(self.analysis_service)
-        self.sorting_worker: SortingWorker = SortingWorker(self.sorter_controller)
+        self.detection_worker: DetectionWorker = DetectionWorker(self.analysis_service, True)
+        self.classification_worker: ClassificationWorker = ClassificationWorker(self.analysis_service, True)
+        self.sorting_worker: SortingWorker = SortingWorker(self.sorter_controller, True)
 
         self.ordering.add_workers(self.detection_worker, self.classification_worker, self.sorting_worker)
 

@@ -23,7 +23,8 @@ class KerasClassifier(LegoClassifier):
     def __init__(self, model_path=os.path.join("lego_sorter_server", "analysis", "classification", "models",
                                                "keras_model", "447_classes.h5")):
         super().__init__()
-        tf.get_logger().setLevel('ERROR')
+        tf.get_logger().setLevel('DEBUG')
+        tf.debugging.disable_traceback_filtering()
         self.model_path = model_path
         self.model = None
         self.initialized = False
@@ -49,7 +50,9 @@ class KerasClassifier(LegoClassifier):
             images_array.append(img_array)
         processing_elapsed_time_ms = 1000 * (time.time() - start_time)
 
-        predictions = self.model(np.vstack(images_array))
+        vstack = np.vstack(images_array)
+
+        predictions = self.model(vstack)
 
         predicting_elapsed_time_ms = 1000 * (time.time() - start_time) - processing_elapsed_time_ms
 
