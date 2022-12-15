@@ -53,7 +53,7 @@ class AnalysisService:
 
     def detect_and_classify(self, image: Image, detection_threshold: float = 0.5, discard_border_results: bool = True) \
             -> Tuple[DetectionResultsList, ClassificationResultsList]:
-
+        logging.info(f"[AnalysisService] DETECT AND CLASSIFY ")
         detection_results = self.detect(image, threshold=detection_threshold,
                                         discard_border_results=discard_border_results)
 

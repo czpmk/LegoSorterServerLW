@@ -61,6 +61,12 @@ class AnalysisResult:
             image=image
         )
 
+    def set_classification_score(self, classification_score: float):
+        self.classification_score = classification_score
+
+    def set_classification_class(self, classification_class: str):
+        self.classification_class = classification_class
+
     def merge_classification_result(self, classification_result: ClassificationResult):
         self.classification_score = classification_result.classification_score
         self.classification_class = classification_result.classification_class
@@ -69,7 +75,8 @@ class AnalysisResult:
         analysis_result = {
             'time_enqueued': self.time_enqueued.strftime('%H:%M:%S.%f') if self.time_enqueued is not None else None,
             'time_detected': self.time_detected.strftime('%H:%M:%S.%f') if self.time_detected is not None else None,
-            'time_classified': self.time_classified.strftime('%H:%M:%S.%f') if self.time_classified is not None else None,
+            'time_classified': self.time_classified.strftime(
+                '%H:%M:%S.%f') if self.time_classified is not None else None,
             'image_id': self.image_id,
             'classification_class': self.classification_class,
             'classification_score': self.classification_score,

@@ -1,59 +1,76 @@
 import logging
+import os
 
 from collections import OrderedDict
+from datetime import datetime
 from typing import List, Optional, Dict
+import pandas as pd
 
-from lego_sorter_server.common.AnalysisResults import AnalysisResultsList, AnalysisResult
+from lego_sorter_server.common.AnalysisResults import AnalysisResultsList, AnalysisResult, ClassificationStrategy
+from lego_sorter_server.common.BrickSortingStatus import BrickSortingStatus
 
 
 class SimpleOrdering:
     BORDER_MARGIN = 5
 
     def __init__(self):
-        self.memorized_state: OrderedDict[int, AnalysisResultsList] = OrderedDict()
+        self.memorized_state: OrderedDict[int, AnalysisResultsList] = OrderedDict()  # TODO przetworzone
         '''
         memorized state: for each index in OrderDict there is AnalysisResultsList OF THE SAME BRICK.
         e.g. given there are 6 nearly identical photos of the same layout of 3 bricks, memorized state shall contain
         3 lists (1 per brick), each of them containing 6 AnalysisResults (1 per photo)
         '''
-        self.processed_bricks: List[AnalysisResultsList] = []
+        self.processed_bricks: List[AnalysisResultsList] = []  # TODO do przetworzenia
         '''processed_bricks: AnalysisResultsList per each processed brick'''
         self.head_index = -1
         '''this indicates the index of the first brick on the tape'''
+        self.bricks: OrderedDict[int, BrickSortingStatus] = OrderedDict()
+        self.brick_id = 0
 
-    def process_current_results(self, results: AnalysisResultsList, image_height: int):
-        if len(results) == 0:
+    def process_current_results(self, results: AnalysisResultsList, image_height: int, time_enqueued: datetime,
+                                time_detected: datetime, time_classified: datetime):
+
+        if len(results) == 0:  # Jezeli nie ma zdjec -> dodaje do przeprocesowanych klocki z memorized state i wracam
             logging.info("[SimpleOrdering] No bricks detected. It means that all bricks have surpassed the camera line")
             self._extract_processed_bricks(len(self.memorized_state))
-            return
+            return None
 
-        results = self.discard_border_results(results, image_height)
+        results = self.discard_border_results(results, image_height)  # usuwamy niepoprawne zdjecia
 
-        if len(results) == 0:
+        if len(results) == 0:  # Jezeli nie ma zdjec -> dodaje do przeprocesowanych klocki z memorized state i wracam
             logging.info("[SimpleOrdering] There is no bricks to process after skipping border results.")
             self._extract_processed_bricks(len(self.memorized_state))
-            return
+            return None
 
-        first_brick_from_history = self._get_first_brick()
+        first_brick_from_history = self._get_first_brick()  # BIERZEMY PIERWSZY BRICK Z MEMORIZED STATE
 
-        if first_brick_from_history is None:
+        if first_brick_from_history is None:  # JEZELI HISTORIA JEST PUSTA DODAJEMY WYNIKI DO NIEJ I ZWIEKSZAMY INDEKS
             logging.info(f"[SimpleOrdering] Nothing in history, adding all results and moving the head index by 1")
 
             self.head_index = self.head_index + 1
-            self._add_results_to_current_state(results, start_from=self.head_index)
-            return
+            self.bricks[self.head_index] = BrickSortingStatus(self.head_index)
+            self.bricks[self.head_index].classified = True
+            # self.bricks[self.head_index].analysis_results_list.                                                    #TODO ADD TIMES
+            self._add_results_to_current_state(results, start_from=self.head_index, time_enqueued=time_enqueued,
+                                               time_detected=time_detected, time_classified=time_classified)
+            #  NEW CREATE STATUS
+            return self.head_index
 
-        first_brick_from_results: AnalysisResult = results[0]
+        first_brick_from_results: AnalysisResult = results[0]  # BIERZEMY PIERWSZY BRICK Z WYNIKU
+        # todo final_classification_class ?
 
-        if self._is_the_same_brick(first_brick_from_history, first_brick_from_results):
+        if self._is_the_same_brick(first_brick_from_history,
+                                   first_brick_from_results):  # JEZELI 1 Z HISTORI I 1 Z WYNIKOW TO TO SAMO, DODAJEMY DO HISTORII
             logging.info(f"[SimpleOrdering] No brick has surpassed the camera line."
                          f"\n\t\t\t First brick from the history:"
                          f"\n\t\t\t {first_brick_from_history}"
                          f"\n\t\t\t Is the same brick as the current first brick:"
                          f"\n\t\t\t {first_brick_from_results}")
-            self._add_results_to_current_state(results, start_from=self.head_index)
-            return
-        else:
+            self._add_results_to_current_state(results, start_from=self.head_index, time_enqueued=time_enqueued,
+                                               time_detected=time_detected, time_classified=time_classified)
+            #  ADD TO EXISTING STATUS
+            return self.head_index
+        else:  # JEZELI 1 Z HISTORI I 1 Z WYNIKOW TO NIE TO SAMO,
             logging.info(f"[SimpleOrdering] Another brick detected at the head position. "
                          f"It means that the previous first brick has surpassed the camera line.")
             passed_bricks_count = self._get_count_of_passed_bricks(current_state=results)
@@ -62,13 +79,43 @@ class SimpleOrdering:
                     f"[SimpleOrdering] {passed_bricks_count} bricks have overpassed the camera line!"
                     f"Such a state shouldn't happen. Sorting results can be incorrect.")
 
-            self._extract_processed_bricks(count=passed_bricks_count)
-            self._add_results_to_current_state(results, start_from=self.head_index)
+            self._extract_processed_bricks(
+                count=passed_bricks_count)  # DODAJEMY DO PRZEPROCESOWANYCH (ZWIEKSZAMY HEAD INDEX o 1)
+            #  CREATE NEW STATUS
+            self.bricks[self.head_index] = BrickSortingStatus(self.head_index)
+            self.bricks[self.head_index].classified = True
+            self._add_results_to_current_state(results, start_from=self.head_index, time_enqueued=time_enqueued,
+                                               time_detected=time_detected,
+                                               time_classified=time_classified)  # DODAJEMY DO HISTORII
+            return self.head_index
 
-    def _add_results_to_current_state(self, results: AnalysisResultsList, start_from: int):
+    def _extract_processed_bricks(self, count):
+        for i in range(count):
+            current_first: AnalysisResultsList = self.memorized_state.pop(self.head_index + i)
+            # self.bricks[self.head_index + i].final_classification_class = current_first.get_result(
+            #     ClassificationStrategy.MEDIAN).classification_class
+
+            self.processed_bricks.append(current_first)
+            logging.info(f"[SimpleOrdering] A brick with id {self.head_index + i} was moved to the processed queue:"
+                         f"\n {current_first}")
+
+        self.head_index = self.head_index + count
+
+    def _add_results_to_current_state(self, results: AnalysisResultsList, start_from: int, time_enqueued: datetime,
+                                      time_detected: datetime, time_classified: datetime):
         for idx in range(len(results)):
             history_of_brick: AnalysisResultsList = self.memorized_state.get(start_from + idx, AnalysisResultsList())
             history_of_brick.append(results[idx])
+            # TODO CREATION OF STATUS
+            results[idx].time_classified = time_classified
+            results[idx].time_detected = time_detected
+            results[idx].time_enqueued = time_enqueued
+            self.bricks[self.head_index].analysis_results_list.append(results[idx])
+            self.bricks[self.head_index].analysis_results_list[idx].set_classification_class(
+                results[idx].classification_class)
+            self.bricks[self.head_index].analysis_results_list[idx].set_classification_score(
+                results[idx].classification_score)
+            # TODO CREATION OF STATUS
             self.memorized_state[start_from + idx] = history_of_brick
 
         logging.info(f"[SimpleOrdering] Added results, the current state is:"
@@ -102,16 +149,7 @@ class SimpleOrdering:
         # Check if the position of the bounding box moved along the tape direction
         # Compare both y_min and y_max
         return older_view.detection_box.y_min <= current_view.detection_box.y_min or \
-               older_view.detection_box.y_max <= current_view.detection_box.y_max
-
-    def _extract_processed_bricks(self, count):
-        for i in range(count):
-            current_first: AnalysisResultsList = self.memorized_state.pop(self.head_index + i)
-            self.processed_bricks.append(current_first)
-            logging.info(f"[SimpleOrdering] A brick with id {self.head_index + i} was moved to the processed queue:"
-                         f"\n {current_first}")
-
-        self.head_index = self.head_index + count
+            older_view.detection_box.y_max <= current_view.detection_box.y_max
 
     def get_count_of_results_to_send(self) -> int:
         return len(self.processed_bricks)
@@ -151,3 +189,26 @@ class SimpleOrdering:
             results = results[:-1]
 
         return results
+
+    # TODO SAVE HISTORY TO CSV
+    def set_time_sorted(self, time_sorted: datetime, brick_id: int):
+        print("SETTING TIME SORTED")
+        print("BRICK: " + str(brick_id))
+        print("DATETIME: " + str(datetime))
+        self.bricks[brick_id].time_sorted = time_sorted
+        self.bricks[brick_id].sorted = True
+
+    def export_history_to_csv(self, file_path: str):
+        results_list = {}
+        global_brick_result_idx = 0
+        for brick_id in self.bricks.keys():
+            results_list.update(self.bricks[brick_id].to_dict(global_brick_result_idx))
+            global_brick_result_idx = len(results_list)
+
+        df = pd.DataFrame.from_dict(results_list).transpose()
+
+        if not os.path.isdir(os.path.dirname(file_path)):
+            os.makedirs(os.path.dirname(file_path))
+
+        logging.info('[SYNC ORDERING] Saving Ordering history to file: {0}'.format(file_path))
+        df.to_csv(file_path)
