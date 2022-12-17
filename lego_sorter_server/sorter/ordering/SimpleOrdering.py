@@ -14,13 +14,13 @@ class SimpleOrdering:
     BORDER_MARGIN = 5
 
     def __init__(self):
-        self.memorized_state: OrderedDict[int, AnalysisResultsList] = OrderedDict()  # TODO przetworzone
+        self.memorized_state: OrderedDict[int, AnalysisResultsList] = OrderedDict()
         '''
         memorized state: for each index in OrderDict there is AnalysisResultsList OF THE SAME BRICK.
         e.g. given there are 6 nearly identical photos of the same layout of 3 bricks, memorized state shall contain
         3 lists (1 per brick), each of them containing 6 AnalysisResults (1 per photo)
         '''
-        self.processed_bricks: List[AnalysisResultsList] = []  # TODO do przetworzenia
+        self.processed_bricks: List[AnalysisResultsList] = []
         '''processed_bricks: AnalysisResultsList per each processed brick'''
         self.head_index = -1
         '''this indicates the index of the first brick on the tape'''
@@ -30,37 +30,34 @@ class SimpleOrdering:
     def process_current_results(self, results: AnalysisResultsList, image_height: int, time_enqueued: datetime,
                                 time_detected: datetime, time_classified: datetime):
 
-        if len(results) == 0:  # Jezeli nie ma zdjec -> dodaje do przeprocesowanych klocki z memorized state i wracam
+        if len(results) == 0:
             logging.info("[SimpleOrdering] No bricks detected. It means that all bricks have surpassed the camera line")
             self._extract_processed_bricks(len(self.memorized_state))
             return None
 
-        results = self.discard_border_results(results, image_height)  # usuwamy niepoprawne zdjecia
+        results = self.discard_border_results(results, image_height)
 
-        if len(results) == 0:  # Jezeli nie ma zdjec -> dodaje do przeprocesowanych klocki z memorized state i wracam
+        if len(results) == 0:
             logging.info("[SimpleOrdering] There is no bricks to process after skipping border results.")
             self._extract_processed_bricks(len(self.memorized_state))
             return None
 
-        first_brick_from_history = self._get_first_brick()  # BIERZEMY PIERWSZY BRICK Z MEMORIZED STATE
+        first_brick_from_history = self._get_first_brick()
 
-        if first_brick_from_history is None:  # JEZELI HISTORIA JEST PUSTA DODAJEMY WYNIKI DO NIEJ I ZWIEKSZAMY INDEKS
+        if first_brick_from_history is None:
             logging.info(f"[SimpleOrdering] Nothing in history, adding all results and moving the head index by 1")
 
             self.head_index = self.head_index + 1
             self.bricks[self.head_index] = BrickSortingStatus(self.head_index)
             self.bricks[self.head_index].classified = True
-            # self.bricks[self.head_index].analysis_results_list.                                                    #TODO ADD TIMES
             self._add_results_to_current_state(results, start_from=self.head_index, time_enqueued=time_enqueued,
                                                time_detected=time_detected, time_classified=time_classified)
-            #  NEW CREATE STATUS
             return self.head_index
 
-        first_brick_from_results: AnalysisResult = results[0]  # BIERZEMY PIERWSZY BRICK Z WYNIKU
-        # todo final_classification_class ?
+        first_brick_from_results: AnalysisResult = results[0]
 
         if self._is_the_same_brick(first_brick_from_history,
-                                   first_brick_from_results):  # JEZELI 1 Z HISTORI I 1 Z WYNIKOW TO TO SAMO, DODAJEMY DO HISTORII
+                                   first_brick_from_results):
             logging.info(f"[SimpleOrdering] No brick has surpassed the camera line."
                          f"\n\t\t\t First brick from the history:"
                          f"\n\t\t\t {first_brick_from_history}"
@@ -68,9 +65,8 @@ class SimpleOrdering:
                          f"\n\t\t\t {first_brick_from_results}")
             self._add_results_to_current_state(results, start_from=self.head_index, time_enqueued=time_enqueued,
                                                time_detected=time_detected, time_classified=time_classified)
-            #  ADD TO EXISTING STATUS
             return self.head_index
-        else:  # JEZELI 1 Z HISTORI I 1 Z WYNIKOW TO NIE TO SAMO,
+        else:
             logging.info(f"[SimpleOrdering] Another brick detected at the head position. "
                          f"It means that the previous first brick has surpassed the camera line.")
             passed_bricks_count = self._get_count_of_passed_bricks(current_state=results)
@@ -80,21 +76,17 @@ class SimpleOrdering:
                     f"Such a state shouldn't happen. Sorting results can be incorrect.")
 
             self._extract_processed_bricks(
-                count=passed_bricks_count)  # DODAJEMY DO PRZEPROCESOWANYCH (ZWIEKSZAMY HEAD INDEX o 1)
-            #  CREATE NEW STATUS
+                count=passed_bricks_count)
             self.bricks[self.head_index] = BrickSortingStatus(self.head_index)
             self.bricks[self.head_index].classified = True
             self._add_results_to_current_state(results, start_from=self.head_index, time_enqueued=time_enqueued,
                                                time_detected=time_detected,
-                                               time_classified=time_classified)  # DODAJEMY DO HISTORII
+                                               time_classified=time_classified)
             return self.head_index
 
     def _extract_processed_bricks(self, count):
         for i in range(count):
             current_first: AnalysisResultsList = self.memorized_state.pop(self.head_index + i)
-            # self.bricks[self.head_index + i].final_classification_class = current_first.get_result(
-            #     ClassificationStrategy.MEDIAN).classification_class
-
             self.processed_bricks.append(current_first)
             logging.info(f"[SimpleOrdering] A brick with id {self.head_index + i} was moved to the processed queue:"
                          f"\n {current_first}")
@@ -106,7 +98,7 @@ class SimpleOrdering:
         for idx in range(len(results)):
             history_of_brick: AnalysisResultsList = self.memorized_state.get(start_from + idx, AnalysisResultsList())
             history_of_brick.append(results[idx])
-            # TODO CREATION OF STATUS
+
             results[idx].time_classified = time_classified
             results[idx].time_detected = time_detected
             results[idx].time_enqueued = time_enqueued
@@ -115,7 +107,7 @@ class SimpleOrdering:
                 results[idx].classification_class)
             self.bricks[self.head_index].analysis_results_list[idx].set_classification_score(
                 results[idx].classification_score)
-            # TODO CREATION OF STATUS
+
             self.memorized_state[start_from + idx] = history_of_brick
 
         logging.info(f"[SimpleOrdering] Added results, the current state is:"
@@ -190,11 +182,7 @@ class SimpleOrdering:
 
         return results
 
-    # TODO SAVE HISTORY TO CSV
     def set_time_sorted(self, time_sorted: datetime, brick_id: int):
-        print("SETTING TIME SORTED")
-        print("BRICK: " + str(brick_id))
-        print("DATETIME: " + str(datetime))
         self.bricks[brick_id].time_sorted = time_sorted
         self.bricks[brick_id].sorted = True
 

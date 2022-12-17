@@ -24,7 +24,7 @@ class SortingProcessor:
         self.ids: List[int] = []
 
     def process_next_image(self, image: Image, save_image: bool = True) -> Dict[int, AnalysisResult]:
-        # todo time enq
+
         time_enqueued = datetime.now()
         start_time = time.time()
         current_results, time_detected, time_classified = self._process(image)
@@ -37,9 +37,6 @@ class SortingProcessor:
                                                        time_classified=time_classified)
         if brick_id is not None and brick_id not in self.ids:
             self.ids.append(brick_id)
-        print("IDS:")
-        print(self.ids)
-        # TODO create queue with ids
 
         if save_image is True and len(current_results) > 0:
             start_time_saving = time.time()
@@ -64,7 +61,6 @@ class SortingProcessor:
             return False
 
         best_result = self.get_best_result(processed_brick)
-        # todo sort time
         time_sorted = datetime.now()
         id = self.ids.pop(0)
         self.ordering.set_time_sorted(time_sorted, id)
@@ -78,7 +74,6 @@ class SortingProcessor:
         logging.info(f"[SortingProcessor] _PROCESS ")
         detection_results, classification_results = self.analysis_service.detect_and_classify(image,
                                                                                               detection_threshold=0.8)
-        # TODO DETECTION TIME AND CLASS TIME
         time_detected = datetime.now()
         time_classified = datetime.now()
         detected_count = len(detection_results)
