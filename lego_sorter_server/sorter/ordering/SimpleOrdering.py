@@ -103,10 +103,6 @@ class SimpleOrdering:
             results[idx].time_detected = time_detected
             results[idx].time_enqueued = time_enqueued
             self.bricks[self.head_index].analysis_results_list.append(results[idx])
-            self.bricks[self.head_index].analysis_results_list[idx].set_classification_class(
-                results[idx].classification_class)
-            self.bricks[self.head_index].analysis_results_list[idx].set_classification_score(
-                results[idx].classification_score)
 
             self.memorized_state[start_from + idx] = history_of_brick
 

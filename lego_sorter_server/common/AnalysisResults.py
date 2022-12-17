@@ -61,12 +61,6 @@ class AnalysisResult:
             image=image
         )
 
-    def set_classification_score(self, classification_score: float):
-        self.classification_score = classification_score
-
-    def set_classification_class(self, classification_class: str):
-        self.classification_class = classification_class
-
     def merge_classification_result(self, classification_result: ClassificationResult):
         self.classification_score = classification_result.classification_score
         self.classification_class = classification_result.classification_class

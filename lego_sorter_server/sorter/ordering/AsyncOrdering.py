@@ -163,7 +163,7 @@ class AsyncOrdering:
             self.bricks[brick_id] = BrickSortingStatus(brick_id)
 
         detection_id = len(self.bricks[brick_id].analysis_results_list)
-        self.bricks[brick_id].analysis_results_list.append(analysis_result) #TODO DONE
+        self.bricks[brick_id].analysis_results_list.append(analysis_result)
 
         self.classification_worker.enqueue((brick_id, detection_id, cropped_image))
 
@@ -182,7 +182,7 @@ class AsyncOrdering:
         if analysis_result is None:
             return
 
-        self.bricks[brick_id].final_classification_class = analysis_result.classification_class #TODO DONE
+        self.bricks[brick_id].final_classification_class = analysis_result.classification_class
         self.sorting_worker.enqueue((brick_id, analysis_result))
 
     def _get_analysis_result(self, brick_id) -> Optional[AnalysisResult]:
