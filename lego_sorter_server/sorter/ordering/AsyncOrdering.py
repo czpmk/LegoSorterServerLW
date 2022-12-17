@@ -77,12 +77,12 @@ class AsyncOrdering:
 
     def on_classification(self, brick_id: int, detection_id: int, classification_result: ClassificationResult):
         self.bricks[brick_id].analysis_results_list[detection_id].time_classified = datetime.now()
-        self.bricks[brick_id].analysis_results_list[detection_id].merge_classification_result(classification_result) #TODO DONE
+        self.bricks[brick_id].analysis_results_list[detection_id].merge_classification_result(classification_result)
         self.bricks[brick_id].classified = True
 
     def on_sort(self, brick_id):
         self.bricks[brick_id].time_sorted = datetime.now()
-        self.bricks[brick_id].sorted = True #TODO DONE
+        self.bricks[brick_id].sorted = True
 
     def _process_bricks_passed_the_camera_line(self, current_detection_results: DetectionResultsList):
         current_first_detection = current_detection_results[0] if len(current_detection_results) > 0 else None

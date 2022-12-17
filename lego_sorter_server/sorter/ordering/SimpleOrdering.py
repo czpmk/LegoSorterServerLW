@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import List, Optional, Dict
 import pandas as pd
 
-from lego_sorter_server.common.AnalysisResults import AnalysisResultsList, AnalysisResult, ClassificationStrategy
+from lego_sorter_server.common.AnalysisResults import AnalysisResultsList, AnalysisResult
 from lego_sorter_server.common.BrickSortingStatus import BrickSortingStatus
 
 
@@ -28,7 +28,7 @@ class SimpleOrdering:
         self.brick_id = 0
 
     def process_current_results(self, results: AnalysisResultsList, image_height: int, time_enqueued: datetime,
-                                time_detected: datetime, time_classified: datetime):
+                                time_detected: datetime, time_classified: datetime) -> Optional[int]:
 
         if len(results) == 0:
             logging.info("[SimpleOrdering] No bricks detected. It means that all bricks have surpassed the camera line")
@@ -189,6 +189,8 @@ class SimpleOrdering:
     def export_history_to_csv(self, file_path: str):
         results_list = {}
         global_brick_result_idx = 0
+        for f in os.listdir('SyncExports'):
+            os.remove(os.path.join('SyncExports', f))
         for brick_id in self.bricks.keys():
             results_list.update(self.bricks[brick_id].to_dict(global_brick_result_idx))
             global_brick_result_idx = len(results_list)
@@ -198,5 +200,5 @@ class SimpleOrdering:
         if not os.path.isdir(os.path.dirname(file_path)):
             os.makedirs(os.path.dirname(file_path))
 
-        logging.info('[SYNC ORDERING] Saving Ordering history to file: {0}'.format(file_path))
+        logging.info('[SimpleOrdering] Saving Ordering history to file: {0}'.format(file_path))
         df.to_csv(file_path)

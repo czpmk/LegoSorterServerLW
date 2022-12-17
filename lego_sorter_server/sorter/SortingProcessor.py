@@ -3,7 +3,7 @@ import time
 import os
 from datetime import datetime
 
-from typing import List, Tuple, Dict, Union, Any
+from typing import List, Tuple, Dict, Union, Any, Optional
 from PIL.Image import Image
 
 from lego_sorter_server.analysis.AnalysisService import AnalysisService
@@ -67,18 +67,17 @@ class SortingProcessor:
         logging.info(f"[SortingProcessor] Got the best result {best_result}. Returning the results...")
         self.sorter_controller.on_brick_recognized(best_result)
 
-    def _process(self, image: Image) -> Union[Tuple[List[Any], None, None], Tuple[Any, datetime, datetime]]:
+    def _process(self, image: Image) -> Tuple[Optional[AnalysisResultsList], Optional[datetime], Optional[datetime]]:
         """
         Returns a list of recognized bricks ordered by the position on the belt - ymin desc
         """
-        logging.info(f"[SortingProcessor] _PROCESS ")
         detection_results, classification_results = self.analysis_service.detect_and_classify(image,
                                                                                               detection_threshold=0.8)
         time_detected = datetime.now()
         time_classified = datetime.now()
         detected_count = len(detection_results)
         if detected_count == 0:
-            return [], None, None
+            return AnalysisResultsList(), None, None
 
         logging.info(f"[SortingProcessor] Detected a lego brick, processing...")
 
@@ -99,9 +98,7 @@ class SortingProcessor:
 
     def stop_machine(self):
         self.sorter_controller.stop_conveyor()
-        for f in os.listdir('a_SyncExports'):
-            os.remove(os.path.join('a_SyncExports', f))
-        self.ordering.export_history_to_csv(os.path.join(os.getcwd(), 'a_SyncExports', 'export_SYNC_{0}.csv'.format(
+        self.ordering.export_history_to_csv(os.path.join(os.getcwd(), 'SyncExports', 'export_SYNC_{0}.csv'.format(
             datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))))
 
     def set_machine_speed(self, speed: int):
