@@ -35,7 +35,7 @@ class SortingProcessor:
         brick_id = self.ordering.process_current_results(current_results, image_height=image.height,
                                                          time_enqueued=time_enqueued, time_detected=time_detected,
                                                        time_classified=time_classified)
-        if brick_id is not None:
+        if brick_id is not None and brick_id not in self.ids:
             self.ids.append(brick_id)
         print("IDS:")
         print(self.ids)
