@@ -65,6 +65,9 @@ class DetectionBox:
             'y_max': self.y_max
         }
 
+    def __str__(self):
+        return '[x_min: {0}, y_min: {1}, x_max: {2},y_max: {3}]'.format(self.x_min, self.y_min, self.x_max, self.y_max)
+
 
 class DetectionResult:
     def __init__(self, detection_box: DetectionBox, detection_score: float, detection_class: str):
