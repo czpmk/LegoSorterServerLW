@@ -15,3 +15,5 @@ lego_sorter_server/classifier/models/saved
 /lego_sorter_server/analysis/classification/models/tf_model/
 /classification_models.zip
 /detection_models.zip
+/AsyncExports/
+/SyncExports/

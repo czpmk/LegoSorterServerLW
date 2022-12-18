@@ -1,4 +1,6 @@
 import logging
+import os
+from datetime import datetime
 
 from PIL.Image import Image
 
@@ -19,15 +21,14 @@ class AsyncSortingProcessor:
         self.sorter_controller: LegoSorterController = LegoSorterController(brick_category_config)
         self.ordering: AsyncOrdering = AsyncOrdering()
 
-        self.detection_worker: DetectionWorker = DetectionWorker(self.analysis_service, self.ordering.on_detection)
-        self.classification_worker: ClassificationWorker = ClassificationWorker(self.analysis_service,
-                                                                                self.ordering.on_classification)
-        self.sorting_worker: SortingWorker = SortingWorker(self.sorter_controller, self.ordering.on_sort)
+        self.detection_worker: DetectionWorker = DetectionWorker(self.analysis_service)
+        self.classification_worker: ClassificationWorker = ClassificationWorker(self.analysis_service)
+        self.sorting_worker: SortingWorker = SortingWorker(self.sorter_controller)
 
-        self.ordering.add_workers(self.classification_worker, self.sorting_worker)
+        self.ordering.add_workers(self.detection_worker, self.classification_worker, self.sorting_worker)
 
     def enqueue_image(self, image: Image):
-        logging.debug('[AsyncSortingProcessor] New Image received from CameraController')
+        logging.info('[AsyncSortingProcessor] New Image received from CameraController')
         image_idx: int = self.ordering.add_image(image)
         self.detection_worker.enqueue((image_idx, image))
 
@@ -52,6 +53,9 @@ class AsyncSortingProcessor:
         self.detection_worker.stop()
         self.classification_worker.stop()
         self.sorting_worker.stop()
+
+        self.ordering.export_history_to_csv(
+            os.path.join(os.getcwd(), 'AsyncExports', 'export_ASYNC_{0}.csv'.format(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))))
         logging.info('[AsyncSortingProcessor] Sorting processor STOP.')
 
     def set_machine_speed(self, speed: int):

@@ -9,15 +9,17 @@ from lego_sorter_server.sorter.workers.Worker import Worker
 
 
 class DetectionWorker(Worker):
-    def __init__(self, analysis_service: AnalysisService, callback: Callable[[int, DetectionResultsList], None]):
+    def __init__(self, analysis_service: AnalysisService):
         super().__init__()
 
         self.analysis_service: AnalysisService = analysis_service
-        self.set_callback(callback)
         self.set_target_method(self.__detect)
 
     def enqueue(self, item: Tuple[int, Image]):
         super(DetectionWorker, self).enqueue(item)
+
+    def set_callback(self, callback: Callable[[int, DetectionResultsList], None]):
+        self._callback = callback
 
     def __detect(self, image_idx: int, image: Image):
         detection_results_list: DetectionResultsList = self.analysis_service.detect(image)

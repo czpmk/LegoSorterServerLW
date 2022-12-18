@@ -1,5 +1,5 @@
 import copy
-from typing import Tuple, Callable, List
+from typing import Tuple, Callable, List, Any, Dict
 
 from lego_sorter_server.generated.Messages_pb2 import BoundingBox
 
@@ -57,6 +57,17 @@ class DetectionBox:
         """
         return [self.y_min, self.x_min, self.y_max, self.x_max]
 
+    def to_dict(self):
+        return {
+            'x_min': self.x_min,
+            'y_min': self.y_min,
+            'x_max': self.x_max,
+            'y_max': self.y_max
+        }
+
+    def __str__(self):
+        return '[x_min: {0}, y_min: {1}, x_max: {2},y_max: {3}]'.format(self.x_min, self.y_min, self.x_max, self.y_max)
+
 
 class DetectionResult:
     def __init__(self, detection_box: DetectionBox, detection_score: float, detection_class: str):
@@ -74,6 +85,14 @@ class DetectionResult:
         bb.label = self.detection_class
         bb.score = self.detection_score
         return bb
+
+    def to_dict(self) -> Dict[str, Any]:
+        detection_result = {
+            'detection_class': self.detection_class,
+            'detection_score': self.detection_score
+        }
+        detection_result.update({'' + k: v for k, v in self.detection_box.to_dict()})
+        return detection_result
 
 
 class DetectionResultsList(List[DetectionResult]):
