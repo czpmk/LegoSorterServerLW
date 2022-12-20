@@ -39,6 +39,16 @@ class LegoAsyncSorterStub(object):
                 request_serializer=Messages__pb2.Empty.SerializeToString,
                 response_deserializer=Messages__pb2.Empty.FromString,
                 )
+        self.startMachine = channel.unary_unary(
+                '/asyncSorter.LegoAsyncSorter/startMachine',
+                request_serializer=Messages__pb2.Empty.SerializeToString,
+                response_deserializer=Messages__pb2.Empty.FromString,
+                )
+        self.stopMachine = channel.unary_unary(
+                '/asyncSorter.LegoAsyncSorter/stopMachine',
+                request_serializer=Messages__pb2.Empty.SerializeToString,
+                response_deserializer=Messages__pb2.Empty.FromString,
+                )
 
 
 class LegoAsyncSorterServicer(object):
@@ -74,6 +84,18 @@ class LegoAsyncSorterServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def startMachine(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def stopMachine(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_LegoAsyncSorterServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -99,6 +121,16 @@ def add_LegoAsyncSorterServicer_to_server(servicer, server):
             ),
             'stop': grpc.unary_unary_rpc_method_handler(
                     servicer.stop,
+                    request_deserializer=Messages__pb2.Empty.FromString,
+                    response_serializer=Messages__pb2.Empty.SerializeToString,
+            ),
+            'startMachine': grpc.unary_unary_rpc_method_handler(
+                    servicer.startMachine,
+                    request_deserializer=Messages__pb2.Empty.FromString,
+                    response_serializer=Messages__pb2.Empty.SerializeToString,
+            ),
+            'stopMachine': grpc.unary_unary_rpc_method_handler(
+                    servicer.stopMachine,
                     request_deserializer=Messages__pb2.Empty.FromString,
                     response_serializer=Messages__pb2.Empty.SerializeToString,
             ),
@@ -192,6 +224,40 @@ class LegoAsyncSorter(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/asyncSorter.LegoAsyncSorter/stop',
+            Messages__pb2.Empty.SerializeToString,
+            Messages__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def startMachine(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/asyncSorter.LegoAsyncSorter/startMachine',
+            Messages__pb2.Empty.SerializeToString,
+            Messages__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def stopMachine(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/asyncSorter.LegoAsyncSorter/stopMachine',
             Messages__pb2.Empty.SerializeToString,
             Messages__pb2.Empty.FromString,
             options, channel_credentials,

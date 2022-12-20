@@ -29,6 +29,16 @@ class LegoAsyncSorterService(LegoAsyncSorter_pb2_grpc.LegoAsyncSorterServicer):
 
         return Empty()
 
+    def startMachine(self, request: Empty, context):
+        self.sortingProcessor.start_machine()
+
+        return Empty()
+
+    def stopMachine(self, request: Empty, context):
+        self.sortingProcessor.stop_machine()
+
+        return Empty()
+
     def getConfiguration(self, request, context) -> SorterConfiguration:
         return super().getConfiguration(request, context)
 

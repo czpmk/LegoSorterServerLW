@@ -31,6 +31,12 @@ class AsyncSortingProcessor:
         image_idx: int = self.ordering.add_image(image)
         self.detection_worker.enqueue((image_idx, image))
 
+    def start_machine(self):
+        self.sorter_controller.run_conveyor()
+
+    def stop_machine(self):
+        self.sorter_controller.stop_conveyor()
+
     def start_sorting(self):
         if self._running:
             logging.warning('[AsyncSortingProcessor] start_sorting called yet the Sorter was already started')
