@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 from . import Messages_pb2 as Messages__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15LegoAsyncSorter.proto\x12\x0b\x61syncSorter\x1a\x0eMessages.proto2\x96\x02\n\x0fLegoAsyncSorter\x12\x33\n\x0cprocessImage\x12\x14.common.ImageRequest\x1a\r.common.Empty\x12>\n\x10getConfiguration\x12\r.common.Empty\x1a\x1b.common.SorterConfiguration\x12\x41\n\x13updateConfiguration\x12\x1b.common.SorterConfiguration\x1a\r.common.Empty\x12%\n\x05start\x12\r.common.Empty\x1a\r.common.Empty\x12$\n\x04stop\x12\r.common.Empty\x1a\r.common.EmptyB/\n\x17\x63om.lsorter.asyncSorterB\x14LegoAsyncSorterProtob\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15LegoAsyncSorter.proto\x12\x0b\x61syncSorter\x1a\x0eMessages.proto2\xf1\x02\n\x0fLegoAsyncSorter\x12\x33\n\x0cprocessImage\x12\x14.common.ImageRequest\x1a\r.common.Empty\x12>\n\x10getConfiguration\x12\r.common.Empty\x1a\x1b.common.SorterConfiguration\x12\x41\n\x13updateConfiguration\x12\x1b.common.SorterConfiguration\x1a\r.common.Empty\x12%\n\x05start\x12\r.common.Empty\x1a\r.common.Empty\x12$\n\x04stop\x12\r.common.Empty\x1a\r.common.Empty\x12,\n\x0cstartMachine\x12\r.common.Empty\x1a\r.common.Empty\x12+\n\x0bstopMachine\x12\r.common.Empty\x1a\r.common.EmptyB/\n\x17\x63om.lsorter.asyncSorterB\x14LegoAsyncSorterProtob\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'LegoAsyncSorter_pb2', globals())
@@ -23,5 +23,5 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
   DESCRIPTOR._serialized_options = b'\n\027com.lsorter.asyncSorterB\024LegoAsyncSorterProto'
   _LEGOASYNCSORTER._serialized_start=55
-  _LEGOASYNCSORTER._serialized_end=333
+  _LEGOASYNCSORTER._serialized_end=424
 # @@protoc_insertion_point(module_scope)
