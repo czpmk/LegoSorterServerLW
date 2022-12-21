@@ -1,19 +1,26 @@
 import logging
+import time
 from queue import Empty
 from typing import Callable, Tuple, Optional
 
 from PIL.Image import Image
 
 from lego_sorter_server.analysis.AnalysisService import AnalysisService
+from lego_sorter_server.analysis.detection import DetectionUtils
 from lego_sorter_server.common.ClassificationResults import ClassificationResult, ClassificationResultsList
 from lego_sorter_server.sorter.workers.ClassificationProcessAttributes import ClassificationProcessAttributes
 from lego_sorter_server.sorter.workers.Worker import Worker
+from lego_sorter_server.images.storage.LegoImageStorage import LegoImageStorage
 
 
 class ClassificationWorker(Worker):
     def __init__(self, analysis_service: AnalysisService,
-                 classification_process_attributes: ClassificationProcessAttributes):
+                 classification_process_attributes: ClassificationProcessAttributes,
+                 save_image=True):
         super().__init__()
+
+        self.save_image = save_image
+        self.storage: LegoImageStorage = LegoImageStorage()
 
         self.classification_process_attributes: ClassificationProcessAttributes = classification_process_attributes
 
@@ -70,4 +77,14 @@ class ClassificationWorker(Worker):
                           'score: {2}.'.format(self._type(),
                                                classification_results_list[0].classification_class,
                                                classification_results_list[0].classification_score))
+            if self.save_image is True:
+                start_time_saving = time.time()
+                time_prefix = f"{int(start_time_saving * 10000) % 10000}"  # 10 seconds
+                for key, value in classification_results_list:
+                    detection_box = value.detection_box
+                    cropped_image = DetectionUtils.crop_with_margin(image, detection_box)
+                    self.storage.save_image(cropped_image, str(key), time_prefix)
+                self.storage.save_image(image, "async_sorter", time_prefix)
+                logging.info(
+                    f"[ClassificationWorker] Saving images took {1000 * (time.time() - start_time_saving)} ms.")
             self._callback(brick_id, detection_id, classification_results_list[0])
