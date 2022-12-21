@@ -31,7 +31,7 @@ class AsyncSortingProcessor:
         self.ordering.add_workers(self.detection_worker, self.classification_worker, self.sorting_worker)
 
     def enqueue_image(self, image: Image):
-        logging.info('[AsyncSortingProcessor] New Image received from CameraController')
+        logging.info('[AsyncSortingProcessor] New Image received from client')
         image_idx: int = self.ordering.add_image(image)
         self.detection_worker.enqueue((image_idx, image))
 
