@@ -185,8 +185,7 @@ class SimpleOrdering:
     def export_history_to_csv(self, file_path: str):
         results_list = {}
         global_brick_result_idx = 0
-        for f in os.listdir('SyncExports'):
-            os.remove(os.path.join('SyncExports', f))
+
         for brick_id in self.bricks.keys():
             results_list.update(self.bricks[brick_id].to_dict(global_brick_result_idx))
             global_brick_result_idx = len(results_list)
