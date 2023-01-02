@@ -18,7 +18,8 @@ from lego_sorter_server.sorter.workers.SortingWorker import SortingWorker
 
 
 class AsyncOrdering:
-    def __init__(self):
+    def __init__(self, detection_worker: DetectionWorker, classification_worker: ClassificationWorker,
+                 sorting_worker: SortingWorker):
         self.classification_strategy = ClassificationStrategy.MEDIAN
         '''Determines the way of obtaining the single classification class based of multiple results'''
 
@@ -43,17 +44,13 @@ class AsyncOrdering:
         '''OrderedDict of DetectionResults and Images, format - key = image_id: int, 
         value = List[Tuple] (DetectionResult, Image)'''
 
-        self.detection_worker: Optional[DetectionWorker] = None
-        self.classification_worker: Optional[ClassificationWorker] = None
-        self.sorting_worker: Optional[SortingWorker] = None
+        self.detection_worker: Optional[DetectionWorker] = detection_worker
+        self.classification_worker: Optional[ClassificationWorker] = classification_worker
+        self.sorting_worker: Optional[SortingWorker] = sorting_worker
 
-    def add_workers(self, detection_worker: DetectionWorker, classification_worker: ClassificationWorker,
-                    sorting_worker: SortingWorker):
-        self.detection_worker = detection_worker
-        self.classification_worker = classification_worker
-        self.sorting_worker = sorting_worker
+        self.set_callbacks()
 
-        # Set callbacks
+    def set_callbacks(self):
         self.detection_worker.set_callback(self.on_detection)
         self.classification_worker.set_callback(self.on_classification)
         self.sorting_worker.set_callback(self.on_sort)

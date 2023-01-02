@@ -21,14 +21,13 @@ class AsyncSortingProcessor:
 
         self.analysis_service: AnalysisService = AnalysisService()
         self.sorter_controller: LegoSorterController = LegoSorterController(brick_category_config)
-        self.ordering: AsyncOrdering = AsyncOrdering()
-
         self.detection_worker: DetectionWorker = DetectionWorker(self.analysis_service)
         self.classification_worker: ClassificationWorker = ClassificationWorker(self.analysis_service,
                                                                                 classification_process_attributes)
         self.sorting_worker: SortingWorker = SortingWorker(self.sorter_controller)
 
-        self.ordering.add_workers(self.detection_worker, self.classification_worker, self.sorting_worker)
+        self.ordering: AsyncOrdering = AsyncOrdering(self.detection_worker, self.classification_worker,
+                                                     self.sorting_worker)
 
     def enqueue_image(self, image: Image):
         logging.info('[AsyncSortingProcessor] New Image received from CameraController')
