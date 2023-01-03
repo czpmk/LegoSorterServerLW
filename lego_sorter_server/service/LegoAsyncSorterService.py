@@ -12,9 +12,8 @@ from lego_sorter_server.sorter.workers.ClassificationProcessAttributes import Cl
 
 class LegoAsyncSorterService(LegoAsyncSorter_pb2_grpc.LegoAsyncSorterServicer):
 
-    def __init__(self, brick_category_config: BrickCategoryConfig,
-                 classification_process_attributes: ClassificationProcessAttributes):
-        self.sortingProcessor = AsyncSortingProcessor(brick_category_config, classification_process_attributes)
+    def __init__(self, brick_category_config: BrickCategoryConfig):
+        self.sortingProcessor = AsyncSortingProcessor(brick_category_config)
 
     def processImage(self, request: ImageRequest, context):
         image = ImageProtoUtils.prepare_image(request)
