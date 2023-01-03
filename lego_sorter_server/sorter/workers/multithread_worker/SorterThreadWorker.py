@@ -13,7 +13,7 @@ class SorterThreadWorker(ThreadWorker):
         super().__init__()
         self.target_method: Callable[[int, AnalysisResult], None] = self.__sort
 
-    def enqueue(self, item: Tuple[int, Image]):
+    def enqueue(self, item: Tuple[int, AnalysisResult]):
         self.input_queue.put(item)
 
     def set_callback(self, callback: Callable[[int], None]):
