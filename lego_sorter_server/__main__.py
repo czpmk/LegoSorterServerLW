@@ -15,15 +15,15 @@ def exception_handler(exc_type, value, tb):
 
 
 if __name__ == '__main__':
-    mp.set_start_method('spawn', force=True)
-
-    process_attributes = ClassificationProcessAttributes()
-    classification_process = mp.Process(target=ClassificationProcessAttributes.run,
-                                        args=(process_attributes.input_queue,
-                                              process_attributes.output_queue,
-                                              ),
-                                        name='ClassificationProcess')
-    classification_process.start()
+    # mp.set_start_method('spawn', force=True)
+    #
+    # process_attributes = ClassificationProcessAttributes()
+    # classification_process = mp.Process(target=ClassificationProcessAttributes.run,
+    #                                     args=(process_attributes.input_queue,
+    #                                           process_attributes.output_queue,
+    #                                           ),
+    #                                     name='ClassificationProcess')
+    # classification_process.start()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--brick_category_config", "-c", help='.json file with brick-category mapping specification',
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
     sys.excepthook = exception_handler
     threading.excepthook = exception_handler
-    Server.run(BrickCategoryConfig(args.brick_category_config), process_attributes)
+    Server.run(BrickCategoryConfig(args.brick_category_config))
 
-    if classification_process.is_alive():
-        classification_process.terminate()
+    # if classification_process.is_alive():
+    #     classification_process.terminate()
