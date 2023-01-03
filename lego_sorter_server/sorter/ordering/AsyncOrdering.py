@@ -80,8 +80,6 @@ class AsyncOrdering:
 
     def on_classification(self, brick_id: int, detection_id: int,
                           classification_results_list: ClassificationResultsList):
-        logging.error('[AsyncOrdering] Internal error - empty list of brick_id received')
-
         if len(classification_results_list) == 0:
             logging.error('[AsyncOrdering] Empty classification result received for brick {0} from '
                           'AnalysisService.classify().'.format(brick_id))
