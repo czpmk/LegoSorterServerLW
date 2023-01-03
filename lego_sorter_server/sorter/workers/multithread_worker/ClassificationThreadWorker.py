@@ -20,6 +20,9 @@ class ClassificationThreadWorker(ThreadWorker):
     def set_callback(self, callback: Callable[[int, int, ClassificationResultsList], None]):
         self.callback = callback
 
+    def set_head_brick_idx(self, head_brick_idx: int):
+        self._head_brick_idx = head_brick_idx
+
     def __classify(self, brick_id: int, detection_id: int, image: Image):
         # brick_id < head_idx ==> brick has already been sorted (passed the camera line)
         if brick_id < self._head_brick_idx:
