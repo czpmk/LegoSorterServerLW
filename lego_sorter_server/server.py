@@ -17,11 +17,11 @@ from lego_sorter_server.sorter.workers.ClassificationProcessAttributes import Cl
 class Server:
 
     @staticmethod
-    def run(sorter_config: BrickCategoryConfig, classification_process_attributes: ClassificationProcessAttributes):
+    def run(sorter_config: BrickCategoryConfig):
         options = [('grpc.max_receive_message_length', 100 * 1024 * 1024)]
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=16), options=options)
         LegoAsyncSorter_pb2_grpc.add_LegoAsyncSorterServicer_to_server(
-            LegoAsyncSorterService(sorter_config, classification_process_attributes),
+            LegoAsyncSorterService(sorter_config),
             server)
         LegoSorter_pb2_grpc.add_LegoSorterServicer_to_server(LegoSorterService(sorter_config), server)
 
