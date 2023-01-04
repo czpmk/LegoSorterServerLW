@@ -15,11 +15,11 @@ class ClassificationProcessWorker(ProcessWorker):
         super().__init__()
 
     @staticmethod
-    def run(input_queue: Queue, output_queue: Queue, target_method: Callable, excepthook: Callable,
-            analysis_service: Optional[AnalysisService]):
+    # def run(input_queue: Queue, output_queue: Queue, excepthook: Callable, analysis_service: Optional[AnalysisService]):
+    def run(input_queue: Queue, output_queue: Queue):
         process_name = multiprocessing.current_process().name
-        if analysis_service is None:
-            analysis_service = AnalysisService()
+        # if analysis_service is None:
+        analysis_service = AnalysisService()
 
         while True:
             logging.info('[{0}] - PING'.format(process_name))
@@ -43,7 +43,7 @@ class ClassificationProcessWorker(ProcessWorker):
                 break
 
             except Exception:
-                excepthook(*sys.exc_info())
+                # excepthook(*sys.exc_info())
                 break
 
         logging.info('[{0}] Process exited.'.format(process_name))

@@ -28,9 +28,9 @@ if __name__ == '__main__':
     threading.excepthook = exception_handler
 
     # ------------------ TOGGLES - for Async sorter only ------------------
-    ANALYSIS_SERVICE_MODE = AnalysisServiceMode.SHARED
+    ANALYSIS_SERVICE_MODE = AnalysisServiceMode.RUN_ON_PROCESS
 
-    DETECTION_WORKER_MODE = WorkerMode.Thread
+    DETECTION_WORKER_MODE = WorkerMode.Process
     CLASSIFICATION_WORKER_MODE = WorkerMode.Process
     # ---------------------------------------------------------------------
 
@@ -51,8 +51,8 @@ if __name__ == '__main__':
                                        args=(
                                            workers.detection.input_queue,
                                            workers.detection.output_queue,
-                                           exception_handler,
-                                           workers.detection.analysis_service
+                                           # exception_handler,
+                                           # workers.detection.analysis_service,
                                        ),
                                        name="DetectionProcess")
         detection_process.start()
@@ -62,8 +62,8 @@ if __name__ == '__main__':
                                             args=(
                                                 workers.classification.input_queue,
                                                 workers.classification.output_queue,
-                                                exception_handler,
-                                                workers.classification.analysis_service
+                                                # exception_handler,
+                                                # workers.classification.analysis_service,
                                             ),
                                             name="ClassificationProcess")
         classification_process.start()
