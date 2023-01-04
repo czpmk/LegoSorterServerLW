@@ -1,10 +1,7 @@
 import logging
-from tkinter import Image
 from typing import Tuple, Callable
 
 from lego_sorter_server.common.AnalysisResults import AnalysisResult
-from lego_sorter_server.common.DetectionResults import DetectionResultsList
-from lego_sorter_server.sorter.workers.DetectionWorker import DetectionWorker
 from lego_sorter_server.sorter.workers.multithread_worker.ThreadWorker import ThreadWorker
 
 
@@ -12,6 +9,14 @@ class SorterThreadWorker(ThreadWorker):
     def __init__(self):
         super().__init__()
         self.target_method: Callable[[int, AnalysisResult], None] = self.__sort
+
+    def start(self):
+        self.sorter_controller.run_conveyor()
+        super().start()
+
+    def stop(self):
+        self.sorter_controller.stop_conveyor()
+        super().stop()
 
     def enqueue(self, item: Tuple[int, AnalysisResult]):
         self.input_queue.put(item)
