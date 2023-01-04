@@ -1,6 +1,4 @@
-import logging
-from queue import Queue, Empty
-from threading import Thread
+from queue import Queue
 from typing import Callable, Optional
 
 from lego_sorter_server.analysis.AnalysisService import AnalysisService
