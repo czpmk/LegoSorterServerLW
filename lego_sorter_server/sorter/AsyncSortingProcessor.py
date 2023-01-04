@@ -35,6 +35,8 @@ class AsyncSortingProcessor:
             ClassificationThreadWorker, ClassificationProcessWorker] = workers.classification
         self.sorting_worker: SorterThreadWorker = workers.sorter
 
+        self.sorting_worker.set_sorter_controller(self.sorter_controller)
+
         self.ordering: AsyncOrdering = AsyncOrdering(self.detection_worker, self.classification_worker,
                                                      self.sorting_worker)
 
