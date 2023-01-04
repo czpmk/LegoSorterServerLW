@@ -24,6 +24,9 @@ class ProcessWorker(Worker):
         logging.info("[ProcessWorker] TODO: action on reset")
         self._listener.reset()
 
+    def enqueue(self, *item):
+        self.input_queue.put(item)
+
     def set_callback(self, callback: Callable):
         self._listener.set_callback(callback)
 

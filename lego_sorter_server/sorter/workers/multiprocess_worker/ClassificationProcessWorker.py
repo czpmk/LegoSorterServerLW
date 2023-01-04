@@ -3,16 +3,23 @@ import multiprocessing
 import sys
 from multiprocessing import Queue
 from queue import Empty
-from typing import Callable, Optional
+from typing import Callable, Optional, Tuple
+
+from PIL.Image import Image
 
 from lego_sorter_server.analysis.AnalysisService import AnalysisService
 from lego_sorter_server.common.ClassificationResults import ClassificationResultsList
 from lego_sorter_server.sorter.workers.multiprocess_worker.ProcessWorker import ProcessWorker
 
+logging.basicConfig(level=logging.INFO)
+
 
 class ClassificationProcessWorker(ProcessWorker):
     def __init__(self):
         super().__init__()
+
+    def enqueue(self, item: Tuple[int, int, Image]):
+        self.input_queue.put(item)
 
     @staticmethod
     # def run(input_queue: Queue, output_queue: Queue, excepthook: Callable, analysis_service: Optional[AnalysisService]):
@@ -21,10 +28,11 @@ class ClassificationProcessWorker(ProcessWorker):
         # if analysis_service is None:
         analysis_service = AnalysisService()
 
+        logging.info('[{0}] - READY'.format(process_name))
         while True:
-            logging.info('[{0}] - PING'.format(process_name))
             try:
                 brick_id, detection_id, image = input_queue.get(timeout=0.5)
+                logging.debug('[{0}] - queue object received'.format(process_name, brick_id, detection_id))
 
                 # TODO: take head_brick_idx into account
 
@@ -36,6 +44,7 @@ class ClassificationProcessWorker(ProcessWorker):
                 output_queue.put((brick_id, detection_id, classification_results_list))
 
             except Empty:
+                logging.debug('[{0}] - Empty'.format(process_name))
                 continue
 
             except KeyboardInterrupt:

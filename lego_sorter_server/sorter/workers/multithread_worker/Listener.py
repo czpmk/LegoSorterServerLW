@@ -1,4 +1,5 @@
 from queue import Empty
+from typing import Callable
 
 from lego_sorter_server.sorter.workers.multithread_worker.ThreadWorker import ThreadWorker
 
@@ -6,6 +7,9 @@ from lego_sorter_server.sorter.workers.multithread_worker.ThreadWorker import Th
 class Listener(ThreadWorker):
     def __init__(self):
         super().__init__()
+
+    def set_callback(self, callback: Callable):
+        self.callback = callback
 
     def run(self):
         """ Unlike other ThreadWorkers - does not process the input in any way, just passes it to callback method. """
