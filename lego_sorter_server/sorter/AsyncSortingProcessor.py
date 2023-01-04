@@ -29,6 +29,8 @@ class AsyncSortingProcessor:
         self.sorter_controller: LegoSorterController = LegoSorterController(brick_category_config)
         self.sorting_worker.set_sorter_controller(self.sorter_controller)
 
+        self.sorting_worker.set_sorter_controller(self.sorter_controller)
+
         self.ordering: AsyncOrdering = AsyncOrdering(self.detection_worker, self.classification_worker,
                                                      self.sorting_worker)
 
