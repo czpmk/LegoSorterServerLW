@@ -1,7 +1,7 @@
 import logging
 import os
-from ctypes import Union
 from datetime import datetime
+from typing import Union
 
 from PIL.Image import Image
 
@@ -9,18 +9,17 @@ from lego_sorter_server.analysis.AnalysisService import AnalysisService
 from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
 from lego_sorter_server.sorter.LegoSorterController import LegoSorterController
 from lego_sorter_server.sorter.ordering.AsyncOrdering import AsyncOrdering
-from lego_sorter_server.sorter.workers.ClassificationProcessAttributes import ClassificationProcessAttributes
-from lego_sorter_server.sorter.workers.Worker import Worker
+from lego_sorter_server.sorter.workers.WorkersContainer import WorkersContainer
+from lego_sorter_server.sorter.workers.multiprocess_worker.ClassificationProcessWorker import \
+    ClassificationProcessWorker
+from lego_sorter_server.sorter.workers.multiprocess_worker.DetectionProcessWorker import DetectionProcessWorker
 from lego_sorter_server.sorter.workers.multithread_worker.ClassificationThreadWorker import ClassificationThreadWorker
-# from lego_sorter_server.sorter.workers.ClassificationWorker import ClassificationWorker
-# from lego_sorter_server.sorter.workers.DetectionWorker import DetectionWorker
-# from lego_sorter_server.sorter.workers.SortingWorker import SortingWorker
 from lego_sorter_server.sorter.workers.multithread_worker.DetectionThreadWorker import DetectionThreadWorker
 from lego_sorter_server.sorter.workers.multithread_worker.SorterThreadWorker import SorterThreadWorker
 
 
 class AsyncSortingProcessor:
-    def __init__(self, brick_category_config: BrickCategoryConfig):
+    def __init__(self, brick_category_config: BrickCategoryConfig, workers: WorkersContainer):
         self._running = False
 
         self.analysis_service: AnalysisService = AnalysisService()
@@ -31,17 +30,10 @@ class AsyncSortingProcessor:
         #                                                                         classification_process_attributes)
         # self.sorting_worker: SortingWorker = SortingWorker(self.sorter_controller)
 
-        self.detection_worker: Worker = DetectionThreadWorker()
-        if self.detection_worker.analysis_service is None:
-            self.detection_worker.set_analysis_service(self.analysis_service)
-
-        self.classification_worker: Worker = ClassificationThreadWorker()
-        if self.classification_worker.analysis_service is None:
-            self.classification_worker.set_analysis_service(self.analysis_service)
-
-        self.sorting_worker: Worker = SorterThreadWorker()
-        if self.sorting_worker.sorter_controller is None:
-            self.sorting_worker.set_sorter_controller(self.sorter_controller)
+        self.detection_worker: Union[DetectionThreadWorker, DetectionProcessWorker] = workers.detection
+        self.classification_worker: Union[
+            ClassificationThreadWorker, ClassificationProcessWorker] = workers.classification
+        self.sorting_worker: SorterThreadWorker = workers.sorter
 
         self.ordering: AsyncOrdering = AsyncOrdering(self.detection_worker, self.classification_worker,
                                                      self.sorting_worker)

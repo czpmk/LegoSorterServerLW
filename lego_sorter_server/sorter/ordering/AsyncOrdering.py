@@ -10,20 +10,19 @@ from PIL.Image import Image
 from lego_sorter_server.analysis.detection import DetectionUtils
 from lego_sorter_server.common.AnalysisResults import AnalysisResultsList, AnalysisResult, ClassificationStrategy
 from lego_sorter_server.common.BrickSortingStatus import BrickSortingStatus
-from lego_sorter_server.common.ClassificationResults import ClassificationResult, ClassificationResultsList
+from lego_sorter_server.common.ClassificationResults import ClassificationResultsList
 from lego_sorter_server.common.DetectionResults import DetectionResultsList, DetectionResult, DetectionBox
-# from lego_sorter_server.sorter.workers.ClassificationWorker import ClassificationWorker
-# from lego_sorter_server.sorter.workers.DetectionWorker import DetectionWorker
-# from lego_sorter_server.sorter.workers.SortingWorker import SortingWorker
-from lego_sorter_server.sorter.workers.Worker import Worker
+from lego_sorter_server.sorter.workers.multiprocess_worker.ClassificationProcessWorker import \
+    ClassificationProcessWorker
+from lego_sorter_server.sorter.workers.multiprocess_worker.DetectionProcessWorker import DetectionProcessWorker
 from lego_sorter_server.sorter.workers.multithread_worker.ClassificationThreadWorker import ClassificationThreadWorker
 from lego_sorter_server.sorter.workers.multithread_worker.DetectionThreadWorker import DetectionThreadWorker
 from lego_sorter_server.sorter.workers.multithread_worker.SorterThreadWorker import SorterThreadWorker
 
 
 class AsyncOrdering:
-    def __init__(self, detection_worker: Union[DetectionThreadWorker],
-                 classification_worker: Union[ClassificationThreadWorker],
+    def __init__(self, detection_worker: Union[DetectionThreadWorker, DetectionProcessWorker],
+                 classification_worker: Union[ClassificationThreadWorker, ClassificationProcessWorker],
                  sorting_worker: Union[SorterThreadWorker]):
         self.classification_strategy = ClassificationStrategy.MEDIAN
         '''Determines the way of obtaining the single classification class based of multiple results'''
@@ -49,9 +48,9 @@ class AsyncOrdering:
         '''OrderedDict of DetectionResults and Images, format - key = image_id: int, 
         value = List[Tuple] (DetectionResult, Image)'''
 
-        # TODO: add ProcessWorkers to unions
-        self.detection_worker: Union[DetectionThreadWorker] = detection_worker
-        self.classification_worker: Union[ClassificationThreadWorker] = classification_worker
+        self.detection_worker: Union[DetectionThreadWorker, DetectionProcessWorker] = detection_worker
+        self.classification_worker: Union[
+            ClassificationThreadWorker, ClassificationProcessWorker] = classification_worker
         self.sorting_worker: Union[SorterThreadWorker] = sorting_worker
 
         self.set_callbacks()
