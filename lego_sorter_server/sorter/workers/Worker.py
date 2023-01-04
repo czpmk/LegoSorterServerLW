@@ -1,4 +1,4 @@
-from queue import Queue
+from multiprocessing import Queue
 from typing import Callable, Optional
 
 from lego_sorter_server.analysis.AnalysisService import AnalysisService
