@@ -5,7 +5,6 @@ from typing import Union
 
 from PIL.Image import Image
 
-from lego_sorter_server.analysis.AnalysisService import AnalysisService
 from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
 from lego_sorter_server.sorter.LegoSorterController import LegoSorterController
 from lego_sorter_server.sorter.ordering.AsyncOrdering import AsyncOrdering
@@ -22,24 +21,19 @@ class AsyncSortingProcessor:
     def __init__(self, brick_category_config: BrickCategoryConfig, workers: WorkersContainer):
         self._running = False
 
-        self.analysis_service: AnalysisService = AnalysisService()
-        self.sorter_controller: LegoSorterController = LegoSorterController(brick_category_config)
-
-        # self.detection_worker: DetectionWorker = DetectionWorker(self.analysis_service)
-        # self.classification_worker: ClassificationWorker = ClassificationWorker(self.analysis_service,
-        #                                                                         classification_process_attributes)
-        # self.sorting_worker: SortingWorker = SortingWorker(self.sorter_controller)
-
         self.detection_worker: Union[DetectionThreadWorker, DetectionProcessWorker] = workers.detection
         self.classification_worker: Union[
             ClassificationThreadWorker, ClassificationProcessWorker] = workers.classification
+
         self.sorting_worker: SorterThreadWorker = workers.sorter
+        self.sorter_controller: LegoSorterController = LegoSorterController(brick_category_config)
+        self.sorting_worker.set_sorter_controller(self.sorter_controller)
 
         self.ordering: AsyncOrdering = AsyncOrdering(self.detection_worker, self.classification_worker,
                                                      self.sorting_worker)
 
     def enqueue_image(self, image: Image):
-        logging.info('[AsyncSortingProcessor] New Image received from CameraController')
+        logging.debug('[AsyncSortingProcessor] New Image received from CameraController')
         image_idx: int = self.ordering.add_image(image)
         self.detection_worker.enqueue((image_idx, image))
 

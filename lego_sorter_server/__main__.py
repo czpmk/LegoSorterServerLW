@@ -12,7 +12,7 @@ from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
 from lego_sorter_server.sorter.workers.WorkersContainer import AnalysisServiceMode, WorkerMode, WorkersContainer
 
 
-def exception_handler(exc_type, value, tb):
+def exception_handler(exc_type=None, value=None, tb=None):
     logging.exception(f"Uncaught exception: {str(value)}")
 
 
@@ -51,8 +51,7 @@ if __name__ == '__main__':
                                        args=(
                                            workers.detection.input_queue,
                                            workers.detection.output_queue,
-                                           # exception_handler,
-                                           # workers.detection.analysis_service,
+                                           workers.detection.analysis_service,
                                        ),
                                        name="DetectionProcess")
         detection_process.start()
@@ -62,8 +61,7 @@ if __name__ == '__main__':
                                             args=(
                                                 workers.classification.input_queue,
                                                 workers.classification.output_queue,
-                                                # exception_handler,
-                                                # workers.classification.analysis_service,
+                                                workers.classification.analysis_service,
                                             ),
                                             name="ClassificationProcess")
         classification_process.start()

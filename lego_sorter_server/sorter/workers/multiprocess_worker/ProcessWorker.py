@@ -1,4 +1,5 @@
 import logging
+from queue import Empty
 from typing import Callable
 
 from lego_sorter_server.sorter.workers.Worker import Worker
@@ -17,7 +18,13 @@ class ProcessWorker(Worker):
         self._listener.start()
 
     def stop(self):
-        logging.info("[ProcessWorker] TODO: action on stop")
+        try:
+            while True:
+                self.input_queue.get_nowait()
+        except Empty:
+            pass
+
+        super().stop()
         self._listener.stop()
 
     def reset(self):
