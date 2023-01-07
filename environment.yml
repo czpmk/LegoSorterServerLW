@@ -1,4 +1,4 @@
-name: LegoSorterSeverLW
+name: LegoSorterServerLW
 channels:
   - conda-forge
   - pytorch
