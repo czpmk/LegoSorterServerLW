@@ -1,0 +1,15 @@
+name: sorterservergl
+channels:
+  - conda-forge
+  - pytorch
+  - defaults
+dependencies:
+  - python=3.8
+  - pip=21
+  - protobuf==3.20.0
+  - opencv
+  - torchvision==0.13.1
+  - pyyaml
+  #  - cudatoolkit=11.6
+  - pip:
+      - -r requirements.txt
