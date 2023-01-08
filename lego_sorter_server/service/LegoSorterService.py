@@ -13,14 +13,15 @@ from lego_sorter_server.sorter.SortingProcessor import SortingProcessor
 
 class LegoSorterService(LegoSorter_pb2_grpc.LegoSorterServicer):
 
-    def __init__(self, brick_category_config: BrickCategoryConfig):
+    def __init__(self, brick_category_config: BrickCategoryConfig, save_images_to_file: bool):
         self.sortingProcessor = SortingProcessor(brick_category_config)
+        self.save_images_to_file = save_images_to_file
 
     def processNextImage(self, request: ImageRequest, context) -> ListOfBoundingBoxesWithIndexes:
         start_time = time.time()
         logging.info("[LegoSorterService] Got an image request. Processing...")
         image = ImageProtoUtils.prepare_image(request)
-        current_state = self.sortingProcessor.process_next_image(image)
+        current_state = self.sortingProcessor.process_next_image(image, self.save_images_to_file)
 
         response = self._prepare_response_from_sorter_state(current_state=current_state)
         elapsed_milliseconds = int(1000 * (time.time() - start_time))

@@ -1,4 +1,5 @@
 import logging
+import time
 
 from lego_sorter_server.generated.Messages_pb2 import ImageRequest
 from lego_sorter_server.generated import LegoAsyncSorter_pb2_grpc
@@ -11,8 +12,10 @@ from lego_sorter_server.sorter.workers.WorkersContainer import WorkersContainer
 
 class LegoAsyncSorterService(LegoAsyncSorter_pb2_grpc.LegoAsyncSorterServicer):
 
-    def __init__(self, brick_category_config: BrickCategoryConfig, workers: WorkersContainer):
+    def __init__(self, brick_category_config: BrickCategoryConfig, save_images_to_file: bool, workers: WorkersContainer):
         self.sortingProcessor = AsyncSortingProcessor(brick_category_config, workers)
+
+        # TODO: add image saving to file functionality and parametrize it with save_images_to_file arg
 
     def processImage(self, request: ImageRequest, context):
         image = ImageProtoUtils.prepare_image(request)

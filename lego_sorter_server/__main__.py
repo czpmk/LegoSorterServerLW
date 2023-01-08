@@ -22,6 +22,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--brick_category_config", "-c", help='.json file with brick-category mapping specification',
                         type=str, required=False)
+    parser.add_argument("--save_brick_images_to_file", "-s", action="store_true",
+                        help='save cropped images (bricks only) to file')
     args = parser.parse_args()
     logging.getLogger().setLevel(logging.INFO)
     sys.excepthook = exception_handler
@@ -66,7 +68,7 @@ if __name__ == '__main__':
                                             name="ClassificationProcess")
         classification_process.start()
 
-    Server.run(BrickCategoryConfig(args.brick_category_config), workers)
+    Server.run(BrickCategoryConfig(args.brick_category_config), args.save_brick_images_to_file, workers)
 
     if CLASSIFICATION_WORKER_MODE == WorkerMode.Process and classification_process.is_alive():
         classification_process.terminate()

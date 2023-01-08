@@ -1,3 +1,5 @@
+import threading
+
 import grpc
 
 from concurrent import futures
@@ -15,13 +17,15 @@ from lego_sorter_server.sorter.workers.WorkersContainer import WorkersContainer
 class Server:
 
     @staticmethod
-    def run(sorter_config: BrickCategoryConfig, workers: WorkersContainer):
+    def run(sorter_config: BrickCategoryConfig, save_images_to_file: bool, workers: WorkersContainer):
         options = [('grpc.max_receive_message_length', 100 * 1024 * 1024)]
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=16), options=options)
         LegoAsyncSorter_pb2_grpc.add_LegoAsyncSorterServicer_to_server(
-            LegoAsyncSorterService(sorter_config, workers),
+            LegoAsyncSorterService(sorter_config, save_images_to_file, workers),
             server)
-        LegoSorter_pb2_grpc.add_LegoSorterServicer_to_server(LegoSorterService(sorter_config), server)
+        LegoSorter_pb2_grpc.add_LegoSorterServicer_to_server(
+            LegoSorterService(sorter_config, save_images_to_file),
+            server)
 
         LegoCapture_pb2_grpc.add_LegoCaptureServicer_to_server(LegoCaptureService(), server)
         LegoAnalysis_pb2_grpc.add_LegoAnalysisServicer_to_server(LegoAnalysisService(), server)
