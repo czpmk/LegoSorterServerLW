@@ -99,8 +99,6 @@ class AsyncOrdering:
         # TODO: add image storing option
         self.bricks[brick_id].analysis_results_list[detection_id].image = None
 
-        self.bricks[brick_id].classified = True
-
     def on_sort(self, brick_id):
         self.bricks[brick_id].time_sorted = datetime.now()
         self.bricks[brick_id].sorted = True

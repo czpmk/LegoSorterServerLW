@@ -49,7 +49,6 @@ class SimpleOrdering:
 
             self.head_index = self.head_index + 1
             self.bricks[self.head_index] = BrickSortingStatus(self.head_index)
-            self.bricks[self.head_index].classified = True
             self._add_results_to_current_state(results, start_from=self.head_index, time_enqueued=time_enqueued,
                                                time_detected=time_detected, time_classified=time_classified)
             return self.head_index
@@ -78,7 +77,6 @@ class SimpleOrdering:
             self._extract_processed_bricks(
                 count=passed_bricks_count)
             self.bricks[self.head_index] = BrickSortingStatus(self.head_index)
-            self.bricks[self.head_index].classified = True
             self._add_results_to_current_state(results, start_from=self.head_index, time_enqueued=time_enqueued,
                                                time_detected=time_detected,
                                                time_classified=time_classified)
