@@ -48,7 +48,6 @@ class SimpleOrdering:
             logging.info(f"[SimpleOrdering] Nothing in history, adding all results and moving the head index by 1")
 
             self.head_index = self.head_index + 1
-            self.bricks[self.head_index] = BrickSortingStatus(self.head_index)
             self._add_results_to_current_state(results, start_from=self.head_index, time_enqueued=time_enqueued,
                                                time_detected=time_detected, time_classified=time_classified)
             return self.head_index
@@ -76,7 +75,6 @@ class SimpleOrdering:
 
             self._extract_processed_bricks(
                 count=passed_bricks_count)
-            self.bricks[self.head_index] = BrickSortingStatus(self.head_index)
             self._add_results_to_current_state(results, start_from=self.head_index, time_enqueued=time_enqueued,
                                                time_detected=time_detected,
                                                time_classified=time_classified)
@@ -108,7 +106,11 @@ class SimpleOrdering:
             results[idx].time_classified = time_classified
             results[idx].time_detected = time_detected
             results[idx].time_enqueued = time_enqueued
-            self.bricks[self.head_index].analysis_results_list.append(results[idx])
+
+            if (start_from + idx) >= len(self.bricks):
+                self.bricks[start_from + idx] = BrickSortingStatus(start_from + idx)
+
+            self.bricks[start_from + idx].analysis_results_list.append(results[idx])
 
             self.memorized_state[start_from + idx] = history_of_brick
 
