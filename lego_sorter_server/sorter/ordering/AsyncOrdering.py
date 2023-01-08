@@ -253,6 +253,21 @@ class AsyncOrdering:
             results_list.update(self.bricks[brick_id].to_dict(global_brick_result_idx))
             global_brick_result_idx = len(results_list)
 
+        for image_id in self.images.keys():
+            results_list.update({
+                global_brick_result_idx: {
+                    'brick_id': -1,
+                    'result_id': -1,
+                    'detected': False,
+                    'classified': False,
+                    'sorted': False,
+                    'image_id': image_id,
+                    'time_enqueued': self.enqueue_times[image_id]
+                }
+            })
+            global_brick_result_idx += 1
+        results_list = {r['image_id']: r for r in results_list.values()}
+
         df = pd.DataFrame.from_dict(results_list).transpose()
 
         if not os.path.isdir(os.path.dirname(file_path)):
