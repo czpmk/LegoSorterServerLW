@@ -67,13 +67,8 @@ class AsyncSortingProcessor:
             os.path.join(os.getcwd(), 'AsyncExports',
                          'export_ASYNC_{0}.csv'.format(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))))
 
-        logging.info('[AsyncSortingProcessor] AsyncOrdering object size: {0} [MB]'.format(
-            float(sys.getsizeof(self.ordering)) * 1000000))
         if self.reset_state_on_stop:
             self.ordering.reset()
-
-        logging.info('[AsyncSortingProcessor] AsyncOrdering object size: {0} [MB]'.format(
-            float(sys.getsizeof(self.ordering)) * 1000000))
 
         logging.info('[AsyncSortingProcessor] Sorting processor STOP.')
 
