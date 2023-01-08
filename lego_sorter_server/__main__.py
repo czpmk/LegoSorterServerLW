@@ -16,8 +16,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--brick_category_config", "-c", help='.json file with brick-category mapping specification',
                         type=str, required=False)
+    parser.add_argument("--save_brick_images_to_file", "-s", action="store_true",
+                        help='save cropped images (bricks only) to file')
     args = parser.parse_args()
     logging.getLogger().setLevel(logging.INFO)
     sys.excepthook = exception_handler
     threading.excepthook = exception_handler
-    Server.run(BrickCategoryConfig(args.brick_category_config))
+    Server.run(BrickCategoryConfig(args.brick_category_config), args.save_brick_images_to_file)
