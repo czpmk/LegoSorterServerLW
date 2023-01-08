@@ -106,7 +106,7 @@ class SimpleOrdering:
 
             self.memorized_state[start_from + idx] = history_of_brick
 
-        logging.info(f"[SimpleOrdering] Added results, the current state is:"
+        logging.debug(f"[SimpleOrdering] Added results, the current state is:"
                      f"\n {list(self.memorized_state.items())}")
 
     def get_current_state(self) -> Dict[int, AnalysisResult]:
