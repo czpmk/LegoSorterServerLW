@@ -247,7 +247,7 @@ class AsyncOrdering:
                     'classified': False,
                     'sorted': False,
                     'image_id': image_id,
-                    'time_enqueued': self.enqueue_times[image_id]
+                    'time_enqueued': self.enqueue_times[image_id].strftime('%H:%M:%S.%f')
                 }
             })
             global_brick_result_idx += 1
