@@ -20,6 +20,8 @@ class ClassificationWorker(Worker):
         super(ClassificationWorker, self).enqueue(item)
 
     def set_head_brick_idx(self, new_idx: int):
+        logging.info(
+            '[{0}] Setting head brick index to {1}. (Skipping bricks below the index)'.format(self._type(), new_idx))
         self._head_brick_idx = new_idx
 
     def set_callback(self, callback: Callable[[int, int, Optional[ClassificationResult]], None]):

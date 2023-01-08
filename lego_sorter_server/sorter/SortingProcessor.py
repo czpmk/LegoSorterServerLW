@@ -104,6 +104,11 @@ class SortingProcessor:
     def set_machine_speed(self, speed: int):
         self.sorter_controller.set_machine_speed(speed)
 
+    def reset(self):
+        logging.info(f"[SortingProcessor] Resetting ids list.")
+        self.ids: List[int] = []
+        self.ordering.reset()
+
     @staticmethod
     def get_best_result(results) -> AnalysisResult:
         # TODO - max score, average score, max count?

@@ -11,10 +11,10 @@ from lego_sorter_server.sorter.AsyncSortingProcessor import AsyncSortingProcesso
 
 class LegoAsyncSorterService(LegoAsyncSorter_pb2_grpc.LegoAsyncSorterServicer):
 
-    def __init__(self, brick_category_config: BrickCategoryConfig, save_images_to_file: bool):
-        self.sortingProcessor = AsyncSortingProcessor(brick_category_config)
-
-        # TODO: add image saving to file functionality and parametrize it with save_images_to_file arg
+    def __init__(self, brick_category_config: BrickCategoryConfig, save_images_to_file: bool, reset_state_on_stop: bool,
+                 skip_sorted_bricks_classification: bool):
+        self.sortingProcessor = AsyncSortingProcessor(brick_category_config, save_images_to_file, reset_state_on_stop,
+                                                      skip_sorted_bricks_classification)
 
     def processImage(self, request: ImageRequest, context):
         image = ImageProtoUtils.prepare_image(request)

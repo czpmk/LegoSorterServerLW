@@ -16,14 +16,17 @@ from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
 class Server:
 
     @staticmethod
-    def run(sorter_config: BrickCategoryConfig, save_images_to_file: bool):
+    def run(sorter_config: BrickCategoryConfig, save_images_to_file: bool, reset_state_on_stop: bool,
+            skip_sorted_bricks_classification: bool):
         options = [('grpc.max_receive_message_length', 100 * 1024 * 1024)]
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=16), options=options)
         LegoAsyncSorter_pb2_grpc.add_LegoAsyncSorterServicer_to_server(
-            LegoAsyncSorterService(sorter_config, save_images_to_file),
+            LegoAsyncSorterService(sorter_config, save_images_to_file, reset_state_on_stop,
+                                   skip_sorted_bricks_classification),
             server)
-        LegoSorter_pb2_grpc.add_LegoSorterServicer_to_server(LegoSorterService(sorter_config, save_images_to_file),
-                                                             server)
+        LegoSorter_pb2_grpc.add_LegoSorterServicer_to_server(
+            LegoSorterService(sorter_config, save_images_to_file, reset_state_on_stop),
+            server)
 
         LegoCapture_pb2_grpc.add_LegoCaptureServicer_to_server(LegoCaptureService(), server)
         LegoAnalysis_pb2_grpc.add_LegoAnalysisServicer_to_server(LegoAnalysisService(), server)

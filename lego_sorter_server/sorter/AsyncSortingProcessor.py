@@ -14,12 +14,14 @@ from lego_sorter_server.sorter.workers.SortingWorker import SortingWorker
 
 
 class AsyncSortingProcessor:
-    def __init__(self, brick_category_config: BrickCategoryConfig):
-        self._running = False
+    def __init__(self, brick_category_config: BrickCategoryConfig, save_images_to_file: bool, reset_state_on_stop: bool,
+                 skip_sorted_bricks_classification: bool):
+        self._running: bool = False
+        self.reset_state_on_stop: bool = reset_state_on_stop
 
         self.analysis_service: AnalysisService = AnalysisService()
         self.sorter_controller: LegoSorterController = LegoSorterController(brick_category_config)
-        self.ordering: AsyncOrdering = AsyncOrdering()
+        self.ordering: AsyncOrdering = AsyncOrdering(save_images_to_file, skip_sorted_bricks_classification)
 
         self.detection_worker: DetectionWorker = DetectionWorker(self.analysis_service)
         self.classification_worker: ClassificationWorker = ClassificationWorker(self.analysis_service)
@@ -63,6 +65,10 @@ class AsyncSortingProcessor:
         self.ordering.export_history_to_csv(
             os.path.join(os.getcwd(), 'AsyncExports',
                          'export_ASYNC_{0}.csv'.format(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))))
+
+        if self.reset_state_on_stop:
+            self.ordering.reset()
+
         logging.info('[AsyncSortingProcessor] Sorting processor STOP.')
 
     def set_machine_speed(self, speed: int):
