@@ -90,12 +90,15 @@ class AsyncOrdering:
         self._process_bricks_passed_the_camera_line(detection_results_list)
 
         self._prepare_for_classification(image_idx, detection_results_list)
-        # TODO: add image storing option
         self.images.pop(image_idx)
 
     def on_classification(self, brick_id: int, detection_id: int, classification_result: ClassificationResult):
         self.bricks[brick_id].analysis_results_list[detection_id].time_classified = datetime.now()
         self.bricks[brick_id].analysis_results_list[detection_id].merge_classification_result(classification_result)
+
+        # TODO: add image storing option
+        self.bricks[brick_id].analysis_results_list[detection_id].image = None
+
         self.bricks[brick_id].classified = True
 
     def on_sort(self, brick_id):
