@@ -13,9 +13,11 @@ from lego_sorter_server.sorter.SortingProcessor import SortingProcessor
 
 class LegoSorterService(LegoSorter_pb2_grpc.LegoSorterServicer):
 
-    def __init__(self, brick_category_config: BrickCategoryConfig, save_images_to_file: bool):
+    def __init__(self, brick_category_config: BrickCategoryConfig, save_images_to_file: bool,
+                 reset_state_on_stop: bool):
         self.sortingProcessor = SortingProcessor(brick_category_config)
         self.save_images_to_file = save_images_to_file
+        self.reset_state_on_stop = reset_state_on_stop
 
     def processNextImage(self, request: ImageRequest, context) -> ListOfBoundingBoxesWithIndexes:
         start_time = time.time()
@@ -36,6 +38,9 @@ class LegoSorterService(LegoSorter_pb2_grpc.LegoSorterServicer):
 
     def stopMachine(self, request: Empty, context):
         self.sortingProcessor.stop_machine()
+
+        if self.reset_state_on_stop:
+            self.sortingProcessor.reset()
 
         return Empty()
 

@@ -84,6 +84,14 @@ class SimpleOrdering:
                                                time_classified=time_classified)
             return self.head_index
 
+    def reset(self):
+        logging.info('[SimpleOrdering] Resetting state.')
+        self.memorized_state.clear()
+        self.processed_bricks.clear()
+        self.head_index = -1
+        self.bricks.clear()
+        self.brick_id = 0
+
     def _extract_processed_bricks(self, count):
         for i in range(count):
             current_first: AnalysisResultsList = self.memorized_state.pop(self.head_index + i)
@@ -107,7 +115,7 @@ class SimpleOrdering:
             self.memorized_state[start_from + idx] = history_of_brick
 
         logging.debug(f"[SimpleOrdering] Added results, the current state is:"
-                     f"\n {list(self.memorized_state.items())}")
+                      f"\n {list(self.memorized_state.items())}")
 
     def get_current_state(self) -> Dict[int, AnalysisResult]:
         """
@@ -126,11 +134,6 @@ class SimpleOrdering:
             return None
         else:
             return res_list[-1]
-
-    def reset(self):
-        self.memorized_state.clear()
-        self.head_index = -1
-        self.processed_bricks: List[AnalysisResultsList] = []
 
     @staticmethod
     def _is_the_same_brick(older_view: AnalysisResult, current_view: AnalysisResult) -> bool:
