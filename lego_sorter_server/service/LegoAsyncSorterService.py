@@ -11,8 +11,10 @@ from lego_sorter_server.sorter.workers.WorkersContainer import WorkersContainer
 
 class LegoAsyncSorterService(LegoAsyncSorter_pb2_grpc.LegoAsyncSorterServicer):
 
-    def __init__(self, brick_category_config: BrickCategoryConfig, workers: WorkersContainer):
-        self.sortingProcessor = AsyncSortingProcessor(brick_category_config, workers)
+    def __init__(self, brick_category_config: BrickCategoryConfig, workers: WorkersContainer, save_images_to_file: bool, reset_state_on_stop: bool,
+                 skip_sorted_bricks_classification: bool):
+        self.sortingProcessor = AsyncSortingProcessor(brick_category_config, workers, save_images_to_file, reset_state_on_stop,
+                                                      skip_sorted_bricks_classification)
 
     def processImage(self, request: ImageRequest, context):
         image = ImageProtoUtils.prepare_image(request)

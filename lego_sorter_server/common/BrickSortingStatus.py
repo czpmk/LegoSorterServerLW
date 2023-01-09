@@ -9,7 +9,6 @@ class BrickSortingStatus:
         self.brick_id = brick_id
         self.analysis_results_list: AnalysisResultsList = AnalysisResultsList()
         # no 'detected' field, results for brick are only stored once the brick has been detected
-        self.classified = False
         self.final_classification_class = None
         '''Class selected out of multiple results in order to sort the brick'''
         self.sorted = False

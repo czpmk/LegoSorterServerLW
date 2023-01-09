@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from datetime import datetime
 from typing import Union
 
@@ -18,23 +19,25 @@ from lego_sorter_server.sorter.workers.multithread_worker.SorterThreadWorker imp
 
 
 class AsyncSortingProcessor:
-    def __init__(self, brick_category_config: BrickCategoryConfig, workers: WorkersContainer):
+    def __init__(self, brick_category_config: BrickCategoryConfig, workers: WorkersContainer, save_images_to_file: bool, reset_state_on_stop: bool,
+                 skip_sorted_bricks_classification: bool):
         self._running = False
 
         self.detection_worker: Union[DetectionThreadWorker, DetectionProcessWorker] = workers.detection
         self.classification_worker: Union[
             ClassificationThreadWorker, ClassificationProcessWorker] = workers.classification
-
         self.sorting_worker: SorterThreadWorker = workers.sorter
+
+        self.reset_state_on_stop: bool = reset_state_on_stop
 
         self.sorter_controller: LegoSorterController = LegoSorterController(brick_category_config)
         self.sorting_worker.set_sorter_controller(self.sorter_controller)
 
         self.ordering: AsyncOrdering = AsyncOrdering(self.detection_worker, self.classification_worker,
-                                                     self.sorting_worker)
+                                                     self.sorting_worker, save_images_to_file, skip_sorted_bricks_classification)
 
     def enqueue_image(self, image: Image):
-        logging.debug('[AsyncSortingProcessor] New Image received from CameraController')
+        logging.debug('[AsyncSortingProcessor] New Image received from client')
         image_idx: int = self.ordering.add_image(image)
         self.detection_worker.enqueue((image_idx, image))
 
@@ -69,6 +72,10 @@ class AsyncSortingProcessor:
         self.ordering.export_history_to_csv(
             os.path.join(os.getcwd(), 'AsyncExports',
                          'export_ASYNC_{0}.csv'.format(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))))
+                         
+        if self.reset_state_on_stop:
+            self.ordering.reset()
+
         logging.info('[AsyncSortingProcessor] Sorting processor STOP.')
 
     def set_machine_speed(self, speed: int):

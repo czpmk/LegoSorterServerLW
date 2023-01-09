@@ -23,7 +23,13 @@ from lego_sorter_server.sorter.workers.multithread_worker.SorterThreadWorker imp
 class AsyncOrdering:
     def __init__(self, detection_worker: Union[DetectionThreadWorker, DetectionProcessWorker],
                  classification_worker: Union[ClassificationThreadWorker, ClassificationProcessWorker],
-                 sorting_worker: Union[SorterThreadWorker]):
+                 sorting_worker: Union[SorterThreadWorker], save_images_to_file: bool,
+                 skip_sorted_bricks_classification: bool):
+
+        # TODO: add image saving to file functionality and parametrize it with save_images_to_file arg
+        self.save_images_to_file = save_images_to_file
+        self.skip_sorted_bricks_classification = skip_sorted_bricks_classification
+        
         self.classification_strategy = ClassificationStrategy.MEDIAN
         '''Determines the way of obtaining the single classification class based of multiple results'''
 
@@ -66,6 +72,20 @@ class AsyncOrdering:
         self.enqueue_times[self.head_image_idx] = datetime.now()
         return self.head_image_idx
 
+    def reset(self):
+        logging.info('[AsyncOrdering] Resetting state.')
+        self.conveyor_state.clear()
+
+        self.head_brick_idx = 0
+        self.bricks.clear()
+
+        self.head_image_idx = 0
+        self.images.clear()
+
+        self.enqueue_times.clear()
+        self.detection_times.clear()
+        self.cropped_images.clear()
+
     def on_detection(self, image_idx: int, detection_results_list: DetectionResultsList):
         self.detection_times[image_idx] = datetime.now()
         detection_results_list.sort(key=lambda x: x.detection_box.y_min, reverse=True)
@@ -74,7 +94,6 @@ class AsyncOrdering:
         self._process_bricks_passed_the_camera_line(detection_results_list)
 
         self._prepare_for_classification(image_idx, detection_results_list)
-        # TODO: add image storing option
         self.images.pop(image_idx)
 
     def on_classification(self, brick_id: int, detection_id: int,
@@ -95,7 +114,9 @@ class AsyncOrdering:
 
         self.bricks[brick_id].analysis_results_list[detection_id].time_classified = datetime.now()
         self.bricks[brick_id].analysis_results_list[detection_id].merge_classification_result(classification_result)
-        self.bricks[brick_id].classified = True
+
+        # TODO: add image storing option
+        self.bricks[brick_id].analysis_results_list[detection_id].image = None
 
     def on_sort(self, brick_id):
         self.bricks[brick_id].time_sorted = datetime.now()
@@ -165,7 +186,8 @@ class AsyncOrdering:
         elif len(bricks_sent_to_sorter) != len(self.conveyor_state):
             self.head_brick_idx = min([x for x in self.conveyor_state.keys() if x not in bricks_sent_to_sorter])
 
-        self.classification_worker.set_head_brick_idx(self.head_brick_idx)
+        if self.skip_sorted_bricks_classification:
+            self.classification_worker.set_head_brick_idx(self.head_brick_idx)
 
     def _store_results_and_enqueue_for_classification(self, image_idx: int, brick_id: int,
                                                       detection_result: DetectionResult):
@@ -232,6 +254,21 @@ class AsyncOrdering:
         for brick_id in self.bricks.keys():
             results_list.update(self.bricks[brick_id].to_dict(global_brick_result_idx))
             global_brick_result_idx = len(results_list)
+
+        for image_id in self.images.keys():
+            results_list.update({
+                global_brick_result_idx: {
+                    'brick_id': -1,
+                    'result_id': -1,
+                    'detected': False,
+                    'classified': False,
+                    'sorted': False,
+                    'image_id': image_id,
+                    'time_enqueued': self.enqueue_times[image_id].strftime('%H:%M:%S.%f')
+                }
+            })
+            global_brick_result_idx += 1
+        results_list = {r['image_id']: r for r in results_list.values()}
 
         df = pd.DataFrame.from_dict(results_list).transpose()
 
