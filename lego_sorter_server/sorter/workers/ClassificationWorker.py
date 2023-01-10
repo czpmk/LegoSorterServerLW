@@ -1,30 +1,23 @@
 import logging
-from queue import Empty
 from typing import Callable, Tuple, Optional
 
 from PIL.Image import Image
 
 from lego_sorter_server.analysis.AnalysisService import AnalysisService
 from lego_sorter_server.common.ClassificationResults import ClassificationResult, ClassificationResultsList
-from lego_sorter_server.sorter.workers.ClassificationProcessAttributes import ClassificationProcessAttributes
 from lego_sorter_server.sorter.workers.Worker import Worker
 
 
 class ClassificationWorker(Worker):
-    def __init__(self, analysis_service: AnalysisService,
-                 classification_process_attributes: ClassificationProcessAttributes):
+    def __init__(self, analysis_service: AnalysisService):
         super().__init__()
 
-        self.classification_process_attributes: ClassificationProcessAttributes = classification_process_attributes
-
         self.analysis_service: AnalysisService = analysis_service
-        # self.set_target_method(self.__classify)
-        self.set_target_method(self.listener_method)
+        self.set_target_method(self.__classify)
         self._head_brick_idx = 0
 
     def enqueue(self, item: Tuple[int, int, Image]):
-        # super(ClassificationWorker, self).enqueue(item)
-        self.classification_process_attributes.input_queue.put(item)
+        super(ClassificationWorker, self).enqueue(item)
 
     def set_head_brick_idx(self, new_idx: int):
         logging.info(
@@ -34,20 +27,6 @@ class ClassificationWorker(Worker):
     def set_callback(self, callback: Callable[[int, int, Optional[ClassificationResult]], None]):
         self._callback = callback
 
-    def run(self):
-        while self._running:
-            try:
-                queue_object = self.classification_process_attributes.output_queue.get(
-                    timeout=3)
-            except Empty:
-                continue
-
-            self._target_method(*queue_object)
-
-    def listener_method(self, brick_id: int, detection_id: int, classification_result: Optional[ClassificationResult]):
-        self._callback(brick_id, detection_id, classification_result)
-
-    # TODO: remove or refactor -- not used
     def __classify(self, brick_id: int, detection_id: int, image: Image):
         # brick_id < head_idx ==> brick has already been sorted (passed the camera line)
         if brick_id < self._head_brick_idx:
