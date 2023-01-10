@@ -2,42 +2,36 @@ import logging
 import os
 import sys
 from datetime import datetime
-from typing import Union
 
 from PIL.Image import Image
 
+from lego_sorter_server.analysis.AnalysisService import AnalysisService
 from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
 from lego_sorter_server.sorter.LegoSorterController import LegoSorterController
 from lego_sorter_server.sorter.ordering.AsyncOrdering import AsyncOrdering
-from lego_sorter_server.sorter.workers.WorkersContainer import WorkersContainer
-from lego_sorter_server.sorter.workers.multiprocess_worker.ClassificationProcessWorker import \
-    ClassificationProcessWorker
-from lego_sorter_server.sorter.workers.multiprocess_worker.DetectionProcessWorker import DetectionProcessWorker
-from lego_sorter_server.sorter.workers.multithread_worker.ClassificationThreadWorker import ClassificationThreadWorker
-from lego_sorter_server.sorter.workers.multithread_worker.DetectionThreadWorker import DetectionThreadWorker
-from lego_sorter_server.sorter.workers.multithread_worker.SorterThreadWorker import SorterThreadWorker
+from lego_sorter_server.sorter.workers.ClassificationWorker import ClassificationWorker
+from lego_sorter_server.sorter.workers.DetectionWorker import DetectionWorker
+from lego_sorter_server.sorter.workers.SortingWorker import SortingWorker
 
 
 class AsyncSortingProcessor:
-    def __init__(self, brick_category_config: BrickCategoryConfig, workers: WorkersContainer, save_images_to_file: bool, reset_state_on_stop: bool,
+    def __init__(self, brick_category_config: BrickCategoryConfig, save_images_to_file: bool, reset_state_on_stop: bool,
                  skip_sorted_bricks_classification: bool):
-        self._running = False
-
-        self.detection_worker: Union[DetectionThreadWorker, DetectionProcessWorker] = workers.detection
-        self.classification_worker: Union[
-            ClassificationThreadWorker, ClassificationProcessWorker] = workers.classification
-        self.sorting_worker: SorterThreadWorker = workers.sorter
-
+        self._running: bool = False
         self.reset_state_on_stop: bool = reset_state_on_stop
 
+        self.analysis_service: AnalysisService = AnalysisService()
         self.sorter_controller: LegoSorterController = LegoSorterController(brick_category_config)
-        self.sorting_worker.set_sorter_controller(self.sorter_controller)
+        self.ordering: AsyncOrdering = AsyncOrdering(save_images_to_file, skip_sorted_bricks_classification)
 
-        self.ordering: AsyncOrdering = AsyncOrdering(self.detection_worker, self.classification_worker,
-                                                     self.sorting_worker, save_images_to_file, skip_sorted_bricks_classification)
+        self.detection_worker: DetectionWorker = DetectionWorker(self.analysis_service)
+        self.classification_worker: ClassificationWorker = ClassificationWorker(self.analysis_service)
+        self.sorting_worker: SortingWorker = SortingWorker(self.sorter_controller)
+
+        self.ordering.add_workers(self.detection_worker, self.classification_worker, self.sorting_worker)
 
     def enqueue_image(self, image: Image):
-        logging.debug('[AsyncSortingProcessor] New Image received from client')
+        logging.info('[AsyncSortingProcessor] New Image received from CameraController')
         image_idx: int = self.ordering.add_image(image)
         self.detection_worker.enqueue((image_idx, image))
 
@@ -72,7 +66,7 @@ class AsyncSortingProcessor:
         self.ordering.export_history_to_csv(
             os.path.join(os.getcwd(), 'AsyncExports',
                          'export_ASYNC_{0}.csv'.format(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))))
-                         
+
         if self.reset_state_on_stop:
             self.ordering.reset()
 
