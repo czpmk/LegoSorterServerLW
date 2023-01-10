@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import time
 from datetime import datetime
 from typing import Union
 
@@ -41,6 +42,11 @@ class AsyncSortingProcessor:
         logging.debug('[AsyncSortingProcessor] New Image received from CameraController')
         image_idx: int = self.ordering.add_image(image)
         self.detection_worker.enqueue((image_idx, image))
+
+        # test
+        # if self.classification_worker.input_queue.qsize() > 2:
+        #     time.sleep(0.01)
+        time.sleep(1)
 
     def start_machine(self):
         self.sorter_controller.run_conveyor()
