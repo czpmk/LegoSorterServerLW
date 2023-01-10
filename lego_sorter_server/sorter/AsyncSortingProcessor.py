@@ -44,9 +44,9 @@ class AsyncSortingProcessor:
         self.detection_worker.enqueue((image_idx, image))
 
         # test
-        # if self.classification_worker.input_queue.qsize() > 2:
-        #     time.sleep(0.01)
-        time.sleep(1)
+        if self.detection_worker.input_queue.qsize() > 4:
+            time.sleep(0.01)
+        # time.sleep(1)
 
     def start_machine(self):
         self.sorter_controller.run_conveyor()
