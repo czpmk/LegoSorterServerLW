@@ -17,3 +17,4 @@ lego_sorter_server/classifier/models/saved
 /detection_models.zip
 /AsyncExports/
 /SyncExports/
+/tester_images/*
