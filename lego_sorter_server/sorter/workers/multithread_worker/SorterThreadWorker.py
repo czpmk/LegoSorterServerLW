@@ -15,8 +15,8 @@ class SorterThreadWorker(ThreadWorker):
         super().start()
 
     def stop(self):
-        self.sorter_controller.stop_conveyor()
         super().stop()
+        self.sorter_controller.stop_conveyor()
 
     def enqueue(self, item: Tuple[int, AnalysisResult]):
         self.input_queue.put(item)
