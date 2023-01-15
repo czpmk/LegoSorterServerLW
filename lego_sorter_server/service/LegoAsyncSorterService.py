@@ -20,7 +20,7 @@ class LegoAsyncSorterService(LegoAsyncSorter_pb2_grpc.LegoAsyncSorterServicer):
         # TODO: add image saving to file functionality and parametrize it with save_images_to_file arg
 
     def processImage(self, request: ImageRequest, context):
-        image = ImageProtoUtils.prepare_image(request)
+        image = ImageProtoUtils.prepare_image_from_request(request)
         self.sortingProcessor.enqueue_image(image)
         return Empty()
 

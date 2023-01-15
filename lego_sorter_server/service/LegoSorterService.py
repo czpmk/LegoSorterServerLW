@@ -22,7 +22,7 @@ class LegoSorterService(LegoSorter_pb2_grpc.LegoSorterServicer):
     def processNextImage(self, request: ImageRequest, context) -> ListOfBoundingBoxesWithIndexes:
         start_time = time.time()
         logging.info("[LegoSorterService] Got an image request. Processing...")
-        image = ImageProtoUtils.prepare_image(request)
+        image = ImageProtoUtils.prepare_image_from_request(request)
         current_state = self.sortingProcessor.process_next_image(image, self.save_images_to_file)
 
         response = self._prepare_response_from_sorter_state(current_state=current_state)

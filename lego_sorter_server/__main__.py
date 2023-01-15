@@ -1,4 +1,5 @@
 import argparse
+import os
 from multiprocessing import Process
 from typing import Optional
 
@@ -10,6 +11,8 @@ import multiprocessing as mp
 
 from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
 from lego_sorter_server.sorter.workers.WorkersContainer import AnalysisServiceMode, WorkerMode, WorkersContainer
+from lego_sorter_server.tester.SorterTester import SorterTester
+from lego_sorter_server.tester.TesterConfig import TesterConfig, Operation
 
 
 def exception_handler(exc_type=None, value=None, tb=None):
@@ -29,17 +32,30 @@ if __name__ == '__main__':
     parser.add_argument("--skipp_sorted_bricks_classification", "-b", action="store_true",
                         help="skip classification of brick images that have already passed the camera line "
                              "(and are assumed to be in process of sorting or already sorted)")
+
+    parser.add_argument("--detection_worker", type=str, required=False, default="Thread", choices=["Thread", "Process"],
+                        help="Selected DETECTION worker mode. Default = Thread")
+    parser.add_argument("--classification_worker", type=str, required=False, default="Thread",
+                        choices=["Thread", "Process"], help="Selected CLASSIFICATION worker mode. Default = Thread")
+
+    parser.add_argument("--test_mode", action="store_true", help="set, in order to run sorter in test mode.")
+    parser.add_argument("--test_operation", "-o", type=str, default="AsyncSorter",
+                        choices=["AsyncSorter", "SyncSorter"], required=False, help="select an operation to be tested")
+    parser.add_argument("--test_time", "-t", type=int, default=60, required=False,
+                        help="test time [seconds]. Discarded if 'test_mode' is not enabled.")
+    parser.add_argument("--capture_delay", "-d", type=int, default=500, required=False,
+                        help="capture delay [milliseconds]. Discarded if 'test_mode' is not enabled.")
+
     args = parser.parse_args()
     logging.getLogger().setLevel(logging.INFO)
     sys.excepthook = exception_handler
     threading.excepthook = exception_handler
 
-    # ------------------ TOGGLES - for Async sorter only ------------------
+    # ------------------ do not change! ------------------
     ANALYSIS_SERVICE_MODE = AnalysisServiceMode.RUN_ON_PROCESS
 
-    DETECTION_WORKER_MODE = WorkerMode.Process
-    CLASSIFICATION_WORKER_MODE = WorkerMode.Process
-    # ---------------------------------------------------------------------
+    DETECTION_WORKER_MODE = WorkerMode.from_string(args.detection_worker)
+    CLASSIFICATION_WORKER_MODE = WorkerMode.from_string(args.classification_worker)
 
     # Workers initialization
     workers = WorkersContainer()
@@ -73,8 +89,16 @@ if __name__ == '__main__':
                                             name="ClassificationProcess")
         classification_process.start()
 
-    Server.run(BrickCategoryConfig(args.brick_category_config), args.save_brick_images_to_file,
-               args.reset_state_on_stop, args.skipp_sorted_bricks_classification, workers)
+    if args.test_mode:
+        t_config = TesterConfig(Operation.from_string(args.test_operation), args.test_time, args.capture_delay,
+                                os.path.abspath('tester_images'))
+
+        SorterTester.run(BrickCategoryConfig(args.brick_category_config), args.save_brick_images_to_file,
+                         args.reset_state_on_stop, args.skipp_sorted_bricks_classification, workers, t_config)
+
+    else:
+        Server.run(BrickCategoryConfig(args.brick_category_config), args.save_brick_images_to_file,
+                   args.reset_state_on_stop, args.skipp_sorted_bricks_classification, workers)
 
     if CLASSIFICATION_WORKER_MODE == WorkerMode.Process and classification_process.is_alive():
         classification_process.terminate()

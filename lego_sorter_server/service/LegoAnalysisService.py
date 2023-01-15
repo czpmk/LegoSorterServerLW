@@ -29,7 +29,7 @@ class LegoAnalysisService(LegoAnalysis_pb2_grpc.LegoAnalysisServicer):
         logging.info("[LegoAnalysisService] Request received, processing...")
         start_time = time.time()
 
-        image = ImageProtoUtils.prepare_image(request)
+        image = ImageProtoUtils.prepare_image_from_request(request)
         detection_results, classification_results = self.analysis_service.detect_and_classify(image)
         bb_list: ListOfBoundingBoxes = ImageProtoUtils.prepare_response_from_analysis_results(detection_results,
                                                                                               classification_results)
@@ -41,7 +41,7 @@ class LegoAnalysisService(LegoAnalysis_pb2_grpc.LegoAnalysisServicer):
         return bb_list
 
     def _detect_bricks(self, request: ImageRequest) -> DetectionResultsList:
-        image = ImageProtoUtils.prepare_image(request)
+        image = ImageProtoUtils.prepare_image_from_request(request)
         detection_results: DetectionResultsList = self.analysis_service.detect(image)
 
         return detection_results

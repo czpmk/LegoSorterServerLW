@@ -14,6 +14,13 @@ class WorkerMode(Enum):
     Thread = 0
     Process = 1
 
+    @classmethod
+    def from_string(cls, str_mode):
+        return {
+            "Thread": WorkerMode.Thread,
+            "Process": WorkerMode.Process
+        }.get(str_mode)
+
 
 class AnalysisServiceMode(Enum):
     SHARED = 0

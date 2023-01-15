@@ -13,15 +13,21 @@ class ImageProtoUtils:
     DEFAULT_LABEL = "Lego"
 
     @staticmethod
-    def prepare_image(request: ImageRequest) -> Image.Image:
+    def prepare_image_from_request(request: ImageRequest) -> Image.Image:
         image = Image.open(BytesIO(request.image))
         image = image.convert('RGB')
 
-        if request.rotation == 90:
+        return ImageProtoUtils.prepare_image(image, request.rotation)
+
+    @staticmethod
+    def prepare_image(src_image: Image, rotation: int) -> Image.Image:
+        image = src_image
+
+        if rotation == 90:
             image = image.transpose(Image.ROTATE_270)
-        elif request.rotation == 180:
+        elif rotation == 180:
             image = image.rotate(180)
-        elif request.rotation == 270:
+        elif rotation == 270:
             image = image.transpose(Image.ROTATE_90)
 
         return image
