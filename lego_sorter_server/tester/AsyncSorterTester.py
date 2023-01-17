@@ -36,7 +36,7 @@ class AsyncSorterTester:
             return
 
         self.prepare_test()
-        time.sleep(5)
+        self.initialize_sorter(30)
 
         start_time = datetime.now()
         last_enqueue_time = start_time - timedelta(seconds=self.tester_config.delay)
@@ -62,6 +62,32 @@ class AsyncSorterTester:
             (datetime.now() - start_time).total_seconds()))
 
         self.end_test()
+
+    def initialize_sorter(self, timeout: int):
+        """ Send initial request item to sorter and wait until classified. timeout: int [s] """
+        start_time = datetime.now()
+        self.process_image(self.source_images[0])
+
+        while True:
+            time.sleep(0.5)
+
+            # check if brick has been classified
+            brick_id: int = next(iter(self.sortingProcessor.ordering.bricks.keys()), None)
+            if brick_id is not None:
+                brick = self.sortingProcessor.ordering.bricks[brick_id]
+                if len(brick.analysis_results_list) > 0 and \
+                        brick.analysis_results_list[0].classification_class is not None:
+                    break
+
+            if (datetime.now() - start_time).total_seconds() > timeout:
+                logging.exception(
+                    "[AsyncSorterTester] Initialization Timeout {0}. Proceeding with the test.".format(timeout))
+                break
+
+            logging.info("[AsyncSorterTester] Waiting for classification...")
+
+        logging.info("[AsyncSorterTester] Initialization took {:.2f} seconds.".format(
+            (datetime.now() - start_time).total_seconds()))
 
     def prepare_test(self):
         logging.info("[AsyncSorterTester] Setting conveyor speed: {0}.".format(self.tester_config.conveyor_speed))
