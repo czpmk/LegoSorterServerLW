@@ -24,7 +24,7 @@ class ClassificationThreadWorker(ThreadWorker):
     def __classify(self, brick_id: int, detection_id: int, image: Image):
         # brick_id < head_idx ==> brick has already been sorted (passed the camera line)
         if brick_id < self._head_brick_idx:
-            logging.info('[{0}] SKIPPING - BRICK ALREADY PASSED THE CAMERA LINE'.format(self._type(), brick_id))
+            logging.info('[{0}] SKIPPING - BRICK {1} ALREADY PASSED THE CAMERA LINE'.format(self._type(), brick_id))
             return
 
         classification_results_list: ClassificationResultsList = self.analysis_service.classify([image])
