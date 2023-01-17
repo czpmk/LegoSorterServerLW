@@ -1,6 +1,7 @@
 import logging
 import multiprocessing
 import sys
+import multiprocessing as mp
 from multiprocessing import Queue
 from queue import Empty
 from typing import Optional, Tuple
@@ -17,8 +18,14 @@ logging.basicConfig(level=logging.INFO)
 class ClassificationProcessWorker(ProcessWorker):
     def __init__(self):
         super().__init__()
-
+        self._process_name = 'ClassificationProcess'
         self._head_brick_idx = 0
+        self._process = mp.Process(target=self.run,
+                                   args=(
+                                       self.input_queue,
+                                       self.output_queue,
+                                   ),
+                                   name=self._process_name)
 
     def enqueue(self, item: Tuple[int, int, Image]):
         self.input_queue.put(item)
@@ -26,19 +33,10 @@ class ClassificationProcessWorker(ProcessWorker):
     def set_head_brick_idx(self, head_brick_idx: int):
         self._head_brick_idx = head_brick_idx
 
-    def stop(self):
-        logging.info('[{0}] Stopping. (Queue size: {1})'.format('ClassificationProcess', self.input_queue.qsize()))
-        super().stop()
-
     @staticmethod
-    def exception_handler(exc_type=None, value=None, tb=None):
-        logging.exception(f"Uncaught exception: {str(value)}")
-
-    @staticmethod
-    def run(input_queue: Queue, output_queue: Queue, analysis_service: Optional[AnalysisService]):
+    def run(input_queue: Queue, output_queue: Queue):
         process_name = multiprocessing.current_process().name
-        if analysis_service is None:
-            analysis_service = AnalysisService()
+        analysis_service = AnalysisService()
 
         logging.info('[{0}] - READY'.format(process_name))
         while True:
