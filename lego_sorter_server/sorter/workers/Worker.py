@@ -1,5 +1,6 @@
 from enum import Enum
 from multiprocessing import Queue
+from queue import Full
 from typing import Callable, Optional
 
 
@@ -21,6 +22,8 @@ class Worker:
         self.input_queue: Queue = Queue()
         self.callback: Optional[Callable] = None
 
+        self.skipped_items_count = 0
+
     def start(self):
         pass
 
@@ -30,6 +33,10 @@ class Worker:
     def reset(self):
         pass
 
+    def set_queue_size_limit(self, queue_size_limit: int):
+        if queue_size_limit != 0:
+            self.input_queue: Queue = Queue(maxsize=queue_size_limit)
+
     def clear_queue(self):
         pass
 
@@ -37,4 +44,7 @@ class Worker:
         pass
 
     def enqueue(self, *item):
-        pass
+        try:
+            self.input_queue.put(item)
+        except Full:
+            self.skipped_items_count += 1

@@ -27,7 +27,7 @@ class DetectionProcessWorker(ProcessWorker):
                                    name=self._process_name)
 
     def enqueue(self, item: Tuple[int, Image]):
-        self.input_queue.put(item)
+        super().enqueue(*item)
 
     @staticmethod
     def run(input_queue: Queue, output_queue: Queue):

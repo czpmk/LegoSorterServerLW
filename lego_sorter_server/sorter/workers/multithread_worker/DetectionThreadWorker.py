@@ -12,7 +12,7 @@ class DetectionThreadWorker(ThreadWorker):
         self.target_method: Callable[[int, Image], None] = self.__detect
 
     def enqueue(self, item: Tuple[int, Image]):
-        self.input_queue.put(item)
+        super().enqueue(*item)
 
     def set_callback(self, callback: Callable[[int, DetectionResultsList], None]):
         self.callback = callback

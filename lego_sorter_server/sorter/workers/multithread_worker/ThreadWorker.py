@@ -1,5 +1,4 @@
 import logging
-from multiprocessing import Queue
 from queue import Empty
 from threading import Thread
 from typing import Callable, Optional

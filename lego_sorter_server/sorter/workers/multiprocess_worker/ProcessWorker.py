@@ -57,9 +57,6 @@ class ProcessWorker(Worker):
         self.clear_queue()
         self._listener.reset()
 
-    def enqueue(self, *item):
-        self.input_queue.put(item)
-
     def set_callback(self, callback: Callable):
         self._listener.set_callback(callback)
 

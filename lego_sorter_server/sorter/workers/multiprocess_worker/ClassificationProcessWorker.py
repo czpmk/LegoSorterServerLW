@@ -29,7 +29,7 @@ class ClassificationProcessWorker(ProcessWorker):
                                    name=self._process_name)
 
     def enqueue(self, item: Tuple[int, int, Image]):
-        self.input_queue.put(item)
+        super().enqueue(*item)
 
     def set_head_brick_idx(self, head_brick_idx: int):
         self._head_brick_idx_queue.put(head_brick_idx)

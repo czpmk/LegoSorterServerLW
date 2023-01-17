@@ -13,7 +13,7 @@ class ClassificationThreadWorker(ThreadWorker):
         self._head_brick_idx: int = 0
 
     def enqueue(self, item: Tuple[int, int, Image]):
-        self.input_queue.put(item)
+        super().enqueue(*item)
 
     def set_callback(self, callback: Callable[[int, int, ClassificationResultsList], None]):
         self.callback = callback

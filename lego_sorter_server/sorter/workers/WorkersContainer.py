@@ -46,9 +46,13 @@ class WorkersContainer:
             raise Exception('Invalid WorkerMode: {0}'.format(mode))
 
     def set_configuration(self, detection_mode: WorkerMode, classification_mode: WorkerMode,
-                          sorter_mode: WorkerMode):
+                          sorter_mode: WorkerMode, max_queue_size: int):
         self._set_detection_worker(detection_mode)
+        self.detection.set_queue_size_limit(max_queue_size)
+
         self._set_classification_worker(classification_mode)
+        self.classification.set_queue_size_limit(max_queue_size)
+
         self._set_sorter_worker(sorter_mode)
 
     def end_processes(self):

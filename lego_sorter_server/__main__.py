@@ -30,12 +30,18 @@ if __name__ == '__main__':
                         help="remove current state on each Stop Sorting call from app")
     parser.add_argument("--skipp_sorted_bricks_classification", "-s", action="store_true",
                         help="skip classification of brick images that have already passed the camera line "
-                             "(and are assumed to be in process of sorting or already sorted)")
+                             "(and are assumed to be in process of sorting or already sorted). "
+                             "(Asynchronous Sorter only!)")
+    parser.add_argument("--queue_size_limit", '-l', type=int, required=False, choices=range(0, 100), default=0,
+                        help="Limit the number of items in detection and classification queues "
+                             "(Asynchronous Sorter only!). Discards all new items while max queue items are achieved. "
+                             "Accepted range = [0, 100], where 0 means limit disabled. Default = 0 (disabled).")
 
     parser.add_argument("--detection_worker", type=str, required=False, default="Thread", choices=["Thread", "Process"],
-                        help="Selected DETECTION worker mode. Default = 'Thread'.")
+                        help="Selected DETECTION worker mode (Asynchronous Sorter only!). Default = 'Thread'.")
     parser.add_argument("--classification_worker", type=str, required=False, default="Thread",
-                        choices=["Thread", "Process"], help="Selected CLASSIFICATION worker mode. Default = 'Thread'.")
+                        choices=["Thread", "Process"],
+                        help="Selected CLASSIFICATION worker mode (Asynchronous Sorter only!). Default = 'Thread'.")
 
     parser.add_argument("--test_mode", action="store_true", help="set, in order to run sorter in test mode.")
     parser.add_argument("--test_operation", "-o", type=str, default="AsyncSorter",
@@ -55,7 +61,8 @@ if __name__ == '__main__':
     workers = WorkersContainer()
     workers.set_configuration(detection_mode=WorkerMode.from_string(args.detection_worker),
                               classification_mode=WorkerMode.from_string(args.classification_worker),
-                              sorter_mode=WorkerMode.Thread)
+                              sorter_mode=WorkerMode.Thread,
+                              max_queue_size=args.queue_size_limit)
 
     try:
         if args.test_mode:

@@ -19,7 +19,7 @@ class SorterThreadWorker(ThreadWorker):
         self.sorter_controller.stop_conveyor()
 
     def enqueue(self, item: Tuple[int, AnalysisResult]):
-        self.input_queue.put(item)
+        super().enqueue(*item)
 
     def set_callback(self, callback: Callable[[int], None]):
         self.callback = callback
