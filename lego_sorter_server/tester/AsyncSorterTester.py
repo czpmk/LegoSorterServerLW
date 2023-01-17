@@ -10,7 +10,6 @@ from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
 from lego_sorter_server.service.ImageProtoUtils import ImageProtoUtils
 from lego_sorter_server.sorter.AsyncSortingProcessor import AsyncSortingProcessor
 from lego_sorter_server.sorter.workers.WorkersContainer import WorkersContainer
-# from lego_sorter_server.tester.SorterTester import SorterTester
 from lego_sorter_server.tester.TesterConfig import TesterConfig
 
 
@@ -20,6 +19,7 @@ class AsyncSorterTester:
         self.sortingProcessor = AsyncSortingProcessor(brick_category_config, save_images_to_file, reset_state_on_stop,
                                                       skip_sorted_bricks_classification, workers)
 
+        self.workers: WorkersContainer = workers
         self.tester_config: TesterConfig = tester_config
         self.source_images: List[Image] = []
 
@@ -36,16 +36,17 @@ class AsyncSorterTester:
             return
 
         self.prepare_test()
-        time.sleep(3)
+        time.sleep(5)
 
         start_time = datetime.now()
         last_enqueue_time = start_time - timedelta(seconds=self.tester_config.delay)
         logging.info("[AsyncSorterTester] Start time: {}.".format(start_time))
 
         image_id = 0
-        # main loop - lasts for time provided as time_run
+
+        # Test run
         while (datetime.now() - start_time).total_seconds() < self.tester_config.time_run:
-            # inner loop - waits for delay
+            # Delay
             while (datetime.now() - last_enqueue_time).total_seconds() < self.tester_config.delay:
                 time.sleep(self.tester_config.delay / 100)
 
@@ -76,6 +77,7 @@ class AsyncSorterTester:
         self.sortingProcessor.stop_sorting()
         self.sortingProcessor.stop_machine()
         logging.info("[AsyncSorterTester] Test finished.")
+        self.workers.end_processes()
 
     def read_images_from_directory(self):
         image_file_names = [x for x in os.listdir(self.tester_config.path_to_source_images) if
