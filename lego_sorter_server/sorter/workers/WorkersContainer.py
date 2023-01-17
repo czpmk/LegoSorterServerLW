@@ -71,3 +71,13 @@ class WorkersContainer:
         self.detection.stop()
         self.classification.stop()
         self.sorter.stop()
+
+    def clear_queues(self):
+        self.classification.clear_queue()
+        self.detection.clear_queue()
+        self.sorter.clear_queue()
+
+    def clear_states(self):
+        self.classification.clear_state()
+        self.detection.clear_state()
+        self.sorter.clear_state()

@@ -41,15 +41,14 @@ class ThreadWorker(Worker):
 
     def clear_queue(self):
         logging.info('[{0}] Clearing queue (Queue size: {1})'.format(self._type(), self.input_queue.qsize()))
-        with self.input_queue.mutex:
-            self.input_queue.queue.clear()
+        try:
+            while True:
+                self.input_queue.get_nowait()
+        except Empty:
+            pass
 
-    def reset(self):
-        if self.running:
-            self.stop()
-
+    def clear_state(self):
         self.clear_queue()
-        self.start()
 
     def set_analysis_service(self, analysis_service: AnalysisService):
         self.analysis_service = analysis_service

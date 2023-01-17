@@ -53,9 +53,9 @@ class ProcessWorker(Worker):
             pass
         self._listener.clear_queue()
 
-    def reset(self):
+    def clear_state(self):
         self.clear_queue()
-        self._listener.reset()
+        self._listener.clear_state()
 
     def set_callback(self, callback: Callable):
         self._listener.set_callback(callback)

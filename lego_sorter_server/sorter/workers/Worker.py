@@ -30,7 +30,7 @@ class Worker:
     def stop(self):
         pass
 
-    def reset(self):
+    def clear_state(self):
         pass
 
     def set_queue_size_limit(self, queue_size_limit: int):

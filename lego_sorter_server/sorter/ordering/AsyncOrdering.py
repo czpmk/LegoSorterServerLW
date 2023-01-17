@@ -63,13 +63,17 @@ class AsyncOrdering:
 
     def reset(self):
         logging.info('[AsyncOrdering] Resetting state.')
+        self.workers.clear_all_states()
         self.conveyor_state.clear()
 
         self.head_brick_idx = 0
+        if self.skip_sorted_bricks_classification:
+            self.workers.classification.set_head_brick_idx(self.head_brick_idx)
         self.bricks.clear()
 
         self.head_image_idx = 0
         self.images.clear()
+
 
         self.enqueue_times.clear()
         self.detection_times.clear()
