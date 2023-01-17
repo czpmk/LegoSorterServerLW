@@ -1,34 +1,60 @@
 import logging
+from multiprocessing import Process
 from queue import Empty
-from typing import Callable
+from typing import Callable, Optional
 
-from lego_sorter_server.sorter.workers.Worker import Worker
+from lego_sorter_server.sorter.workers.Worker import Worker, WorkerMode
 from lego_sorter_server.sorter.workers.multithread_worker.Listener import Listener
 
 
 class ProcessWorker(Worker):
     def __init__(self):
         super().__init__()
+        self.mode = WorkerMode.Process
+        self._process: Optional[Process] = None
+        self._process_name: str = 'DefaultProcess'
 
         self._listener: Listener = Listener()
         self.output_queue = self._listener.input_queue
+        self.started = False
+        ''' Cannot restart the process, only set "started" once '''
 
     def start(self):
-        logging.info("[ProcessWorker] TODO: action on start")
         self._listener.start()
+        if not self.started:
+            self.start_process()
+            self.started = True
 
     def stop(self):
+        self._listener.stop()
+        logging.info('[{0}] Stopped. (Queue size: {1})'.format(self._process_name, self.input_queue.qsize()))
+
+    def start_process(self):
+        logging.info('[{0}] Starting Process.'.format(self._process_name))
+        self._process.start()
+
+    def end_process(self):
+        logging.info('[{0}] Stopping Process.'.format(self._process_name))
+        if self._process.is_alive():
+            self._process.join(1)
+        else:
+            logging.exception('[{0}] Process exited before the join attempt.'.format(self._process_name))
+
+        if self._process.is_alive():
+            logging.exception('[{0}] Process did not end at join() call. Terminating.'.format(self._process_name))
+            self._process.terminate()
+
+    def _clear_queue(self):
+        logging.info('[{0}] Clearing queue (Queue size: {1})'.format(self._process_name, self.input_queue.qsize()))
         try:
             while True:
                 self.input_queue.get_nowait()
         except Empty:
             pass
-
-        super().stop()
-        self._listener.stop()
+        self._listener.clear_queue()
 
     def reset(self):
-        logging.info("[ProcessWorker] TODO: action on reset")
+        self.clear_queue()
         self._listener.reset()
 
     def enqueue(self, *item):
@@ -38,26 +64,9 @@ class ProcessWorker(Worker):
         self._listener.set_callback(callback)
 
     @staticmethod
+    def exception_handler(exc_type=None, value=None, tb=None):
+        logging.exception("Uncaught exception: {0}".format(str(value)))
+
+    @staticmethod
     def run(*args):
         pass
-
-    # @staticmethod
-    # def run(input_queue: Queue, output_queue: Queue, target_method: Callable):
-    #     process_name = multiprocessing.current_process().name
-    #
-    #     while True:
-    #         try:
-    #             queue_object = input_queue.get(timeout=0.5)
-    #
-    #         except Empty:
-    #             continue
-    #
-    #         except KeyboardInterrupt:
-    #             logging.error('[{0}] KeyboardInterrupt. Exiting...'.format(process_name))
-    #             break
-    #
-    #         except Exception as e:
-    #             logging.error('[{0}] Exception while running process:\n'.format(process_name))
-    #             logging.error('{0}'.format(e))
-    #             logging.error('[{0}] Exiting...'.format(process_name))
-    #             break
