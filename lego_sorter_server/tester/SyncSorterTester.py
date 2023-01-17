@@ -12,7 +12,6 @@ from lego_sorter_server.generated.Messages_pb2 import ImageRequest, BoundingBox,
     ListOfBoundingBoxesWithIndexes, BoundingBoxWithIndex
 from lego_sorter_server.service.ImageProtoUtils import ImageProtoUtils
 from lego_sorter_server.sorter.SortingProcessor import SortingProcessor
-# from lego_sorter_server.tester.SorterTester import SorterTester
 from lego_sorter_server.tester.TesterConfig import TesterConfig
 
 
