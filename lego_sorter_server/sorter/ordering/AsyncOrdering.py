@@ -1,7 +1,7 @@
 import logging
 import os
 from collections import OrderedDict
-from typing import List, Tuple, Optional, Union
+from typing import List, Tuple, Optional
 from datetime import datetime
 
 import pandas as pd
@@ -12,19 +12,12 @@ from lego_sorter_server.common.AnalysisResults import AnalysisResultsList, Analy
 from lego_sorter_server.common.BrickSortingStatus import BrickSortingStatus
 from lego_sorter_server.common.ClassificationResults import ClassificationResultsList
 from lego_sorter_server.common.DetectionResults import DetectionResultsList, DetectionResult, DetectionBox
-from lego_sorter_server.sorter.workers.multiprocess_worker.ClassificationProcessWorker import \
-    ClassificationProcessWorker
-from lego_sorter_server.sorter.workers.multiprocess_worker.DetectionProcessWorker import DetectionProcessWorker
-from lego_sorter_server.sorter.workers.multithread_worker.ClassificationThreadWorker import ClassificationThreadWorker
-from lego_sorter_server.sorter.workers.multithread_worker.DetectionThreadWorker import DetectionThreadWorker
-from lego_sorter_server.sorter.workers.multithread_worker.SorterThreadWorker import SorterThreadWorker
+from lego_sorter_server.sorter.workers.WorkersContainer import WorkersContainer
 
 
 class AsyncOrdering:
     def __init__(self, save_images_to_file: bool, skip_sorted_bricks_classification: bool,
-                 detection_worker: Union[DetectionThreadWorker, DetectionProcessWorker],
-                 classification_worker: Union[ClassificationThreadWorker, ClassificationProcessWorker],
-                 sorting_worker: Union[SorterThreadWorker]):
+                 workers: WorkersContainer):
         # TODO: add image saving to file functionality and parametrize it with save_images_to_file arg
         self.save_images_to_file = save_images_to_file
         self.skip_sorted_bricks_classification = skip_sorted_bricks_classification
@@ -53,17 +46,14 @@ class AsyncOrdering:
         '''OrderedDict of DetectionResults and Images, format - key = image_id: int, 
         value = List[Tuple] (DetectionResult, Image)'''
 
-        self.detection_worker: Union[DetectionThreadWorker, DetectionProcessWorker] = detection_worker
-        self.classification_worker: Union[
-            ClassificationThreadWorker, ClassificationProcessWorker] = classification_worker
-        self.sorting_worker: Union[SorterThreadWorker] = sorting_worker
+        self.workers: WorkersContainer = workers
 
         self.set_callbacks()
 
     def set_callbacks(self):
-        self.detection_worker.set_callback(self.on_detection)
-        self.classification_worker.set_callback(self.on_classification)
-        self.sorting_worker.set_callback(self.on_sort)
+        self.workers.detection.set_callback(self.on_detection)
+        self.workers.classification.set_callback(self.on_classification)
+        self.workers.sorter.set_callback(self.on_sort)
 
     def add_image(self, image: Image) -> int:
         self.head_image_idx += 1
@@ -186,7 +176,7 @@ class AsyncOrdering:
             self.head_brick_idx = min([x for x in self.conveyor_state.keys() if x not in bricks_sent_to_sorter])
 
         if self.skip_sorted_bricks_classification:
-            self.classification_worker.set_head_brick_idx(self.head_brick_idx)
+            self.workers.classification.set_head_brick_idx(self.head_brick_idx)
 
     def _store_results_and_enqueue_for_classification(self, image_idx: int, brick_id: int,
                                                       detection_result: DetectionResult):
@@ -203,7 +193,7 @@ class AsyncOrdering:
         detection_id = len(self.bricks[brick_id].analysis_results_list)
         self.bricks[brick_id].analysis_results_list.append(analysis_result)
 
-        self.classification_worker.enqueue((brick_id, detection_id, cropped_image))
+        self.workers.classification.enqueue((brick_id, detection_id, cropped_image))
 
     def _send_to_sorter(self, brick_id_list: List[int]):
         if len(brick_id_list) == 0:
@@ -221,7 +211,7 @@ class AsyncOrdering:
             return
 
         self.bricks[brick_id].final_classification_class = analysis_result.classification_class
-        self.sorting_worker.enqueue((brick_id, analysis_result))
+        self.workers.sorter.enqueue((brick_id, analysis_result))
 
     def _get_analysis_result(self, brick_id) -> Optional[AnalysisResult]:
         analysis_results_list = self.bricks[brick_id].analysis_results_list
