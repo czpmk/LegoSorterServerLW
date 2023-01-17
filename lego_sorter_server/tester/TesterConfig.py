@@ -20,7 +20,7 @@ class TesterConfig:
         ''' Tester time of run in seconds: int '''
 
         self.delay: float = float(delay) / 1000
-        ''' Capture delay value in seconds: int. Expected delay argument in milliseconds. '''
+        ''' Capture delay value in seconds: float. Expected delay argument in milliseconds. '''
 
         self.path_to_source_images: str = path_to_images
         self.conveyor_speed: int = 50
