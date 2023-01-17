@@ -4,7 +4,7 @@ import sys
 import multiprocessing as mp
 from multiprocessing import Queue
 from queue import Empty
-from typing import Optional, Tuple
+from typing import Tuple
 
 from PIL.Image import Image
 
@@ -19,11 +19,12 @@ class ClassificationProcessWorker(ProcessWorker):
     def __init__(self):
         super().__init__()
         self._process_name = 'ClassificationProcess'
-        self._head_brick_idx = 0
+        self._head_brick_idx_queue: Queue[int] = Queue()
         self._process = mp.Process(target=self.run,
                                    args=(
                                        self.input_queue,
                                        self.output_queue,
+                                       self._head_brick_idx_queue,
                                    ),
                                    name=self._process_name)
 
@@ -31,20 +32,33 @@ class ClassificationProcessWorker(ProcessWorker):
         self.input_queue.put(item)
 
     def set_head_brick_idx(self, head_brick_idx: int):
-        self._head_brick_idx = head_brick_idx
+        self._head_brick_idx_queue.put(head_brick_idx)
 
     @staticmethod
-    def run(input_queue: Queue, output_queue: Queue):
+    def run(input_queue: Queue, output_queue: Queue, head_brick_idx_queue: Queue):
         process_name = multiprocessing.current_process().name
         analysis_service = AnalysisService()
+
+        head_brick_idx = -1
 
         logging.info('[{0}] - READY'.format(process_name))
         while True:
             try:
                 brick_id, detection_id, image = input_queue.get(timeout=0.5)
-                logging.debug('[{0}] - queue object received'.format(process_name, brick_id, detection_id))
 
-                # TODO: take head_brick_idx into account
+                # brick_id < head_idx ==> brick has already been sorted (passed the camera line)
+                while True:
+                    try:
+                        head_brick_idx = head_brick_idx_queue.get_nowait()
+                    except Empty:
+                        break
+
+                if brick_id < head_brick_idx:
+                    logging.info(
+                        '[{0}] SKIPPING - BRICK {1} ALREADY PASSED THE CAMERA LINE'.format(process_name, brick_id))
+                    continue
+
+                logging.debug('[{0}] - queue object received'.format(process_name, brick_id, detection_id))
 
                 classification_results_list: ClassificationResultsList = analysis_service.classify([image])
 
