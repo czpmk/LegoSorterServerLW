@@ -1,8 +1,3 @@
-import logging
-import os
-import time
-from abc import abstractmethod
-
 from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
 from lego_sorter_server.sorter.workers.WorkersContainer import WorkersContainer
 from lego_sorter_server.tester.AsyncSorterTester import AsyncSorterTester
@@ -20,8 +15,5 @@ class SorterTester:
             Operation.SyncSorter: SyncSorterTester(brick_category_config, save_images_to_file,
                                                    reset_state_on_stop, tester_config)
         }.get(tester_config.operation)
-
-        logging.info("[SorterTester] Waiting 10s for Analysis Service to initialize.")
-        time.sleep(10)
 
         tester.run_test()
