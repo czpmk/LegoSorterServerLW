@@ -63,7 +63,7 @@ class AsyncOrdering:
 
     def reset(self):
         logging.info('[AsyncOrdering] Resetting state.')
-        self.workers.clear_all_states()
+        self.workers.clear_states()
         self.conveyor_state.clear()
 
         self.head_brick_idx = 0
