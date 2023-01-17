@@ -3,7 +3,6 @@ from tkinter import Image
 from typing import Tuple, Callable
 
 from lego_sorter_server.common.DetectionResults import DetectionResultsList
-from lego_sorter_server.sorter.workers.DetectionWorker import DetectionWorker
 from lego_sorter_server.sorter.workers.multithread_worker.ThreadWorker import ThreadWorker
 
 
