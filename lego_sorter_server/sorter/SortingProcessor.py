@@ -3,7 +3,7 @@ import time
 import os
 from datetime import datetime
 
-from typing import List, Tuple, Dict, Union, Any, Optional
+from typing import List, Tuple, Dict, Optional
 from PIL.Image import Image
 
 from lego_sorter_server.analysis.AnalysisService import AnalysisService
@@ -34,7 +34,7 @@ class SortingProcessor:
 
         brick_id = self.ordering.process_current_results(current_results, image_height=image.height,
                                                          time_enqueued=time_enqueued, time_detected=time_detected,
-                                                       time_classified=time_classified)
+                                                         time_classified=time_classified)
         if brick_id is not None and brick_id not in self.ids:
             self.ids.append(brick_id)
 
