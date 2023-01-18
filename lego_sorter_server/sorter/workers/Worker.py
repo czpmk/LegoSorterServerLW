@@ -1,3 +1,4 @@
+import logging
 from enum import Enum
 from multiprocessing import Queue
 from queue import Full
@@ -21,7 +22,9 @@ class Worker:
         self.mode: Optional[WorkerMode] = None
         self.input_queue: Queue = Queue()
         self.callback: Optional[Callable] = None
+        self._name: str = self._type()
 
+        self._queue_size_limit = 0
         self.skipped_items_count = 0
 
     def start(self):
@@ -34,8 +37,8 @@ class Worker:
         pass
 
     def set_queue_size_limit(self, queue_size_limit: int):
-        if queue_size_limit != 0:
-            self.input_queue: Queue = Queue(maxsize=queue_size_limit)
+        # Do not use Queue's 'maxsize' - compatibility issues on Ubuntu
+        self._queue_size_limit = queue_size_limit
 
     def clear_queue(self):
         pass
@@ -44,7 +47,14 @@ class Worker:
         pass
 
     def enqueue(self, *item):
-        try:
-            self.input_queue.put(item)
-        except Full:
+        # Do not use Queue's 'maxsize' - compatibility issues on Ubuntu
+        if self._queue_size_limit != 0 and self.input_queue.qsize() > self._queue_size_limit:
+            logging.info('[{0}] Queue size reached the limit ({1}). '
+                         'Discarding new item.'.format(self._name, self._queue_size_limit))
             self.skipped_items_count += 1
+
+        else:
+            self.input_queue.put(item)
+
+    def _type(self) -> str:
+        return self.__class__.__name__

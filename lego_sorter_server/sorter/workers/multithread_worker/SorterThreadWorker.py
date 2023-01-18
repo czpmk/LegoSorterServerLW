@@ -26,6 +26,6 @@ class SorterThreadWorker(ThreadWorker):
 
     def __sort(self, brick_id: int, analysis_result: AnalysisResult):
         self.sorter_controller.on_brick_recognized(analysis_result)
-        logging.debug('[{0}] Bricks {1} sorted.'.format(self._type(), brick_id))
+        logging.debug('[{0}] Bricks {1} sorted.'.format(self._name, brick_id))
 
         self.callback(brick_id)

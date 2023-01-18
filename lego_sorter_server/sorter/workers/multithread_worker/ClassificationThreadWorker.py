@@ -24,13 +24,13 @@ class ClassificationThreadWorker(ThreadWorker):
     def __classify(self, brick_id: int, detection_id: int, image: Image):
         # brick_id < head_idx ==> brick has already been sorted (passed the camera line)
         if brick_id < self._head_brick_idx:
-            logging.info('[{0}] SKIPPING - BRICK {1} ALREADY PASSED THE CAMERA LINE'.format(self._type(), brick_id))
+            logging.info('[{0}] SKIPPING - BRICK {1} ALREADY PASSED THE CAMERA LINE'.format(self._name, brick_id))
             return
 
         classification_results_list: ClassificationResultsList = self.analysis_service.classify([image])
 
         logging.debug('[{0}] Classification result: {1}, '
-                      'score: {2}.'.format(self._type(),
+                      'score: {2}.'.format(self._name,
                                            classification_results_list[0].classification_class,
                                            classification_results_list[0].classification_score))
         self.callback(brick_id, detection_id, classification_results_list)

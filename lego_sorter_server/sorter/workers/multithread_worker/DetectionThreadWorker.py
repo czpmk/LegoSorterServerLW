@@ -20,6 +20,6 @@ class DetectionThreadWorker(ThreadWorker):
     def __detect(self, image_idx: int, image: Image):
         detection_results_list: DetectionResultsList = self.analysis_service.detect(image)
 
-        logging.debug('[{0}] Bricks detected {1} at image {2}.'.format(self._type(), len(detection_results_list),
+        logging.debug('[{0}] Bricks detected {1} at image {2}.'.format(self._name, len(detection_results_list),
                                                                        image_idx))
         self.callback(image_idx, detection_results_list)

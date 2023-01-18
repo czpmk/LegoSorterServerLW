@@ -21,7 +21,7 @@ class ThreadWorker(Worker):
 
     def start(self):
         if self.running is True:
-            logging.exception('[{0}] Attempting to START the worker while it is running.'.format(self._type()))
+            logging.exception('[{0}] Attempting to START the worker while it is running.'.format(self._name))
             return
 
         self.running = True
@@ -30,17 +30,19 @@ class ThreadWorker(Worker):
 
     def stop(self):
         if self.running is False:
-            logging.exception('[{0}] Attempting to STOP the worker while it is not running.'.format(self._type()))
+            logging.exception('[{0}] Attempting to STOP the worker while it is not running.'.format(self._name))
             return
 
         self.running = False
         if self.thread.is_alive():
             self.thread.join(1)
 
-        logging.info('[{0}] Stopping thread (Queue size: {1})'.format(self._type(), self.input_queue.qsize()))
+        logging.info(
+            '[{0}] Stopping thread (Queue size: {1}, skipped items: {2})'.format(self._name, self.input_queue.qsize(),
+                                                                                 self.skipped_items_count))
 
     def clear_queue(self):
-        logging.info('[{0}] Clearing queue (Queue size: {1})'.format(self._type(), self.input_queue.qsize()))
+        logging.info('[{0}] Clearing queue (Queue size: {1})'.format(self._name, self.input_queue.qsize()))
         try:
             while True:
                 self.input_queue.get_nowait()
@@ -64,6 +66,3 @@ class ThreadWorker(Worker):
                 continue
 
             self.target_method(*queue_object)
-
-    def _type(self) -> str:
-        return self.__class__.__name__
