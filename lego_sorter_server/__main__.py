@@ -89,9 +89,6 @@ if __name__ == '__main__':
             Server.run(BrickCategoryConfig(args.brick_category_config), args.save_brick_images_to_file,
                        args.reset_state_on_stop, args.skipp_sorted_bricks_classification, workers)
 
-        del workers
-
     except Exception:
         exception_handler(*sys.exc_info())
-        workers.end_processes()
         del workers
