@@ -18,6 +18,19 @@ def exception_handler(exc_type=None, value=None, tb=None):
     logging.exception(f"Uncaught exception: {str(value)}")
 
 
+def int_in_range_0_100(arg):
+    try:
+        int_val = int(arg)
+        if int_val not in range(0, 100):
+            raise argparse.ArgumentTypeError(
+                "Invalid argument value. Must be in range 0 (inclusive) to 100 (exclusive).")
+        else:
+            return int_val
+
+    except ValueError:
+        raise argparse.ArgumentTypeError("Invalid argument type. Int required.")
+
+
 if __name__ == '__main__':
     mp.set_start_method('spawn', force=True)
 
@@ -32,7 +45,7 @@ if __name__ == '__main__':
                         help="skip classification of brick images that have already passed the camera line "
                              "(and are assumed to be in process of sorting or already sorted). "
                              "(Asynchronous Sorter only!)")
-    parser.add_argument("--queue_size_limit", '-l', type=int, required=False, choices=range(0, 100), default=0,
+    parser.add_argument("--queue_size_limit", '-l', type=int_in_range_0_100, required=False, default=0,
                         help="Limit the number of items in detection and classification queues "
                              "(Asynchronous Sorter only!). Discards all new items while max queue items are achieved. "
                              "Accepted range = [0, 100], where 0 means limit disabled. Default = 0 (disabled).")
@@ -50,7 +63,7 @@ if __name__ == '__main__':
     parser.add_argument("--test_time", "-t", type=int, default=60, required=False,
                         help="test time [seconds]. Discarded if 'test_mode' is not enabled. Default = 60s.")
     parser.add_argument("--capture_delay", "-d", type=int, default=500, required=False,
-                        help="capture delay [milliseconds]. Discarded if 'test_mode' is not enabled. Default = 60s.")
+                        help="capture delay [milliseconds]. Discarded if 'test_mode' is not enabled. Default = 500ms.")
 
     args = parser.parse_args()
     logging.getLogger().setLevel(logging.INFO)
