@@ -48,6 +48,9 @@ class ThreadWorker(Worker):
                 self.input_queue.get_nowait()
         except Empty:
             pass
+        except BrokenPipeError:
+            logging.debug('[{0}] Attempting worker\'s queue clear while the Pipe has already been closed.')
+            pass
 
     def clear_state(self):
         self.clear_queue()
