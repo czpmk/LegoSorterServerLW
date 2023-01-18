@@ -85,7 +85,7 @@ class SyncSorterTester:
                     "[SyncSorterTester] Initialization Timeout {0}. Proceeding with the test.".format(timeout))
                 break
 
-            logging.info("[SyncSorterTester] Waiting for classification...")
+            logging.debug("[SyncSorterTester] Waiting for classification...")
 
         logging.info("[SyncSorterTester] Initialization took {:.2f} seconds.".format(
             (datetime.now() - start_time).total_seconds()))

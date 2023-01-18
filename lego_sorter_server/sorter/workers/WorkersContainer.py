@@ -56,11 +56,13 @@ class WorkersContainer:
         self._set_sorter_worker(sorter_mode)
 
     def end_processes(self):
-        if self.classification.mode == WorkerMode.Process:
-            self.classification.end_process()
-
+        self.detection.clear_state()
         if self.detection.mode == WorkerMode.Process:
             self.detection.end_process()
+
+        self.classification.clear_state()
+        if self.classification.mode == WorkerMode.Process:
+            self.classification.end_process()
 
     def start_all(self):
         self.detection.start()
@@ -81,3 +83,8 @@ class WorkersContainer:
         self.classification.clear_state()
         self.detection.clear_state()
         self.sorter.clear_state()
+
+    def __del__(self):
+        self.classification.__del__()
+        self.detection.__del__()
+        self.sorter.__del__()

@@ -66,3 +66,10 @@ class ThreadWorker(Worker):
                 continue
 
             self.target_method(*queue_object)
+
+    def __del__(self):
+        self.clear_state()
+        if self.thread.is_alive():
+            self.thread.join(1)
+        logging.info('[{0}] Thread closed.'.format(self._name))
+        super().__del__()

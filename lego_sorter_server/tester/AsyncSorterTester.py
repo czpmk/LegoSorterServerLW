@@ -84,7 +84,7 @@ class AsyncSorterTester:
                     "[AsyncSorterTester] Initialization Timeout {0}. Proceeding with the test.".format(timeout))
                 break
 
-            logging.info("[AsyncSorterTester] Waiting for classification...")
+            logging.debug("[AsyncSorterTester] Waiting for classification...")
 
         logging.info("[AsyncSorterTester] Initialization took {:.2f} seconds.".format(
             (datetime.now() - start_time).total_seconds()))

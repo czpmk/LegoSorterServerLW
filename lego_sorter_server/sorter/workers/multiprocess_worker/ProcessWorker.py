@@ -39,11 +39,11 @@ class ProcessWorker(Worker):
         if self._process.is_alive():
             self._process.join(1)
         else:
-            logging.exception('[{0}] Process exited before the join attempt.'.format(self._name))
+            logging.info('[{0}] Process exited before the join attempt.'.format(self._name))
 
         if self._process.is_alive():
-            logging.exception('[{0}] Process did not end at join() call. Terminating.'.format(self._name))
-            self._process.terminate()
+            logging.info('[{0}] Process did not end at join() call. Terminating.'.format(self._name))
+            self._process.kill()
 
     def _clear_queue(self):
         logging.info('[{0}] Clearing queue (Queue size: {1})'.format(self._name, self.input_queue.qsize()))
@@ -68,3 +68,10 @@ class ProcessWorker(Worker):
     @staticmethod
     def run(*args):
         pass
+
+    def __del__(self):
+        self.clear_state()
+        self.end_process()
+        self._listener.__del__()
+        logging.info('[{0}] Process closed.'.format(self._name))
+        super().__del__()
