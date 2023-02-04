@@ -8,10 +8,10 @@ from lego_sorter_server.tester.TesterConfig import TesterConfig, Operation
 class SorterTester:
     @staticmethod
     def run(brick_category_config: BrickCategoryConfig, save_images_to_file: bool, reset_state_on_stop: bool,
-            skip_sorted_bricks_classification: bool, workers: WorkersContainer, tester_config: TesterConfig):
+            workers: WorkersContainer, tester_config: TesterConfig):
         tester = {
             Operation.AsyncSorter: AsyncSorterTester(brick_category_config, save_images_to_file, reset_state_on_stop,
-                                                     skip_sorted_bricks_classification, workers, tester_config),
+                                                     workers, tester_config),
             Operation.SyncSorter: SyncSorterTester(brick_category_config, save_images_to_file,
                                                    reset_state_on_stop, tester_config)
         }.get(tester_config.operation)
