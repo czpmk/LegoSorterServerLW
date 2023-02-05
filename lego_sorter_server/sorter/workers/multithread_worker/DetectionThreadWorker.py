@@ -10,7 +10,6 @@ from lego_sorter_server.sorter.workers.multithread_worker.ThreadWorker import Th
 class DetectionThreadWorker(ThreadWorker):
     def __init__(self):
         super().__init__()
-        # self.target_method: Callable[[int, Image], None] = self.__detect
 
     def enqueue(self, item: Tuple[int, Image]):
         super().enqueue(*item)
@@ -18,7 +17,6 @@ class DetectionThreadWorker(ThreadWorker):
     def set_callback(self, callback: Callable[[int, DetectionResultsList], None]):
         self.callback = callback
 
-    # def run(self, image_idx: int, image: Image):
     def run(self):
         while self.running:
             try:
@@ -31,6 +29,3 @@ class DetectionThreadWorker(ThreadWorker):
             logging.debug('[{0}] Bricks detected {1} at image {2}.'.format(self._name, len(detection_results_list),
                                                                            image_idx))
             self.callback(image_idx, detection_results_list)
-
-            # self.target_method(*queue_object)
-

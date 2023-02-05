@@ -9,7 +9,6 @@ from lego_sorter_server.sorter.workers.multithread_worker.ThreadWorker import Th
 class SorterThreadWorker(ThreadWorker):
     def __init__(self):
         super().__init__()
-        # self.target_method: Callable[[int, AnalysisResult], None] = self.__sort
 
     def start(self):
         self.sorter_controller.run_conveyor()
@@ -25,12 +24,6 @@ class SorterThreadWorker(ThreadWorker):
     def set_callback(self, callback: Callable[[int], None]):
         self.callback = callback
 
-    # def __sort(self, brick_id: int, analysis_result: AnalysisResult):
-    #     self.sorter_controller.on_brick_recognized(analysis_result)
-    #     logging.debug('[{0}] Bricks {1} sorted.'.format(self._name, brick_id))
-    #
-    #     self.callback(brick_id)
-
     def run(self):
         while self.running:
             try:
@@ -42,5 +35,3 @@ class SorterThreadWorker(ThreadWorker):
             logging.debug('[{0}] Bricks {1} sorted.'.format(self._name, brick_id))
 
             self.callback(brick_id)
-
-            # self.target_method(*queue_object)

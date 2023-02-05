@@ -19,7 +19,6 @@ class AsyncOrdering:
     def __init__(self, save_images_to_file: bool, workers: WorkersContainer):
         # TODO: add image saving to file functionality and parametrize it with save_images_to_file arg
         self.save_images_to_file = save_images_to_file
-        # self.skip_sorted_bricks_classification = skip_sorted_bricks_classification
 
         self.classification_strategy = ClassificationStrategy.MEDIAN
         '''Determines the way of obtaining the single classification class based of multiple results'''
@@ -66,8 +65,6 @@ class AsyncOrdering:
         self.conveyor_state.clear()
 
         self.head_brick_idx = 0
-        # if self.skip_sorted_bricks_classification:
-        #     self.workers.classification.set_head_brick_idx(self.head_brick_idx)
         self.bricks.clear()
 
         self.head_image_idx = 0
@@ -87,24 +84,12 @@ class AsyncOrdering:
         self._prepare_for_classification(image_idx, detection_results_list)
         self.images.pop(image_idx)
 
-    # def on_classification(self, brick_id: int, detection_id: int,
-    #                       classification_results_list: ClassificationResultsList):
     def on_classification(self, results: List[Tuple[int, int, ClassificationResult]]):
         """
         Format: List[Tuple[brick_id, detection_id, classification_result]]
         """
         logging.debug(
             '[AsyncOrdering] Classification results received: {0}.'.format(len(results)))
-        # if len(classification_results_list) == 0:
-        #     logging.error('[AsyncOrdering] Empty classification result received for brick {0} from '
-        #                   'AnalysisService.classify().'.format(brick_id))
-        #     return
-        #
-        # elif len(classification_results_list) != 1:
-        #     logging.error('[AsyncOrdering] Invalid number of classification results: {0}, 1 expected. '
-        #                   'Discarding all but first result'.format(len(classification_results_list)))
-
-        # classification_result = classification_results_list[0]
         time_classified = datetime.now()
 
         for brick_id, detection_id, classification_result in results:
@@ -186,9 +171,6 @@ class AsyncOrdering:
         # Only some of the last conveyor_state bricks passed the camera line
         elif len(bricks_sent_to_sorter) != len(self.conveyor_state):
             self.head_brick_idx = min([x for x in self.conveyor_state.keys() if x not in bricks_sent_to_sorter])
-
-        # if self.skip_sorted_bricks_classification:
-        #     self.workers.classification.set_head_brick_idx(self.head_brick_idx)
 
     def _store_results_and_enqueue_for_classification(self, image_idx: int, brick_id: int,
                                                       detection_result: DetectionResult):

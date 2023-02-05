@@ -1,5 +1,4 @@
 import logging
-import time
 
 from lego_sorter_server.generated.Messages_pb2 import ImageRequest
 from lego_sorter_server.generated import LegoAsyncSorter_pb2_grpc
