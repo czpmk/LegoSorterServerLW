@@ -12,16 +12,13 @@ from lego_sorter_server.common.AnalysisResults import AnalysisResultsList, Analy
 from lego_sorter_server.common.BrickSortingStatus import BrickSortingStatus
 from lego_sorter_server.common.ClassificationResults import ClassificationResult
 from lego_sorter_server.common.DetectionResults import DetectionResultsList, DetectionResult, DetectionBox
-from lego_sorter_server.sorter.workers.ClassificationWorker import ClassificationWorker
-from lego_sorter_server.sorter.workers.DetectionWorker import DetectionWorker
-from lego_sorter_server.sorter.workers.SortingWorker import SortingWorker
+from lego_sorter_server.sorter.workers.WorkersContainer import WorkersContainer
 
 
 class AsyncOrdering:
-    def __init__(self, save_images_to_file: bool, skip_sorted_bricks_classification: bool):
+    def __init__(self, save_images_to_file: bool, workers: WorkersContainer):
         # TODO: add image saving to file functionality and parametrize it with save_images_to_file arg
         self.save_images_to_file = save_images_to_file
-        self.skip_sorted_bricks_classification = skip_sorted_bricks_classification
 
         self.classification_strategy = ClassificationStrategy.MEDIAN
         '''Determines the way of obtaining the single classification class based of multiple results'''
@@ -47,20 +44,14 @@ class AsyncOrdering:
         '''OrderedDict of DetectionResults and Images, format - key = image_id: int, 
         value = List[Tuple] (DetectionResult, Image)'''
 
-        self.detection_worker: Optional[DetectionWorker] = None
-        self.classification_worker: Optional[ClassificationWorker] = None
-        self.sorting_worker: Optional[SortingWorker] = None
+        self.workers: WorkersContainer = workers
 
-    def add_workers(self, detection_worker: DetectionWorker, classification_worker: ClassificationWorker,
-                    sorting_worker: SortingWorker):
-        self.detection_worker = detection_worker
-        self.classification_worker = classification_worker
-        self.sorting_worker = sorting_worker
+        self.set_callbacks()
 
-        # Set callbacks
-        self.detection_worker.set_callback(self.on_detection)
-        self.classification_worker.set_callback(self.on_classification)
-        self.sorting_worker.set_callback(self.on_sort)
+    def set_callbacks(self):
+        self.workers.detection.set_callback(self.on_detection)
+        self.workers.classification.set_callback(self.on_classification)
+        self.workers.sorter.set_callback(self.on_sort)
 
     def add_image(self, image: Image) -> int:
         self.head_image_idx += 1
@@ -70,6 +61,7 @@ class AsyncOrdering:
 
     def reset(self):
         logging.info('[AsyncOrdering] Resetting state.')
+        self.workers.clear_states()
         self.conveyor_state.clear()
 
         self.head_brick_idx = 0
@@ -92,12 +84,25 @@ class AsyncOrdering:
         self._prepare_for_classification(image_idx, detection_results_list)
         self.images.pop(image_idx)
 
-    def on_classification(self, brick_id: int, detection_id: int, classification_result: ClassificationResult):
-        self.bricks[brick_id].analysis_results_list[detection_id].time_classified = datetime.now()
-        self.bricks[brick_id].analysis_results_list[detection_id].merge_classification_result(classification_result)
+    def on_classification(self, results: List[Tuple[int, int, ClassificationResult]]):
+        """
+        Format: List[Tuple[brick_id, detection_id, classification_result]]
+        """
+        logging.debug(
+            '[AsyncOrdering] Classification results received: {0}.'.format(len(results)))
+        time_classified = datetime.now()
 
-        # TODO: add image storing option
-        self.bricks[brick_id].analysis_results_list[detection_id].image = None
+        for brick_id, detection_id, classification_result in results:
+            logging.debug('[AsyncOrdering] Classification result for brick {0}: {1}, '
+                          'score: {2}.'.format(brick_id,
+                                               classification_result.classification_class,
+                                               classification_result.classification_score))
+
+            self.bricks[brick_id].analysis_results_list[detection_id].time_classified = time_classified
+            self.bricks[brick_id].analysis_results_list[detection_id].merge_classification_result(classification_result)
+
+            # TODO: add image storing option
+            self.bricks[brick_id].analysis_results_list[detection_id].image = None
 
     def on_sort(self, brick_id):
         self.bricks[brick_id].time_sorted = datetime.now()
@@ -167,9 +172,6 @@ class AsyncOrdering:
         elif len(bricks_sent_to_sorter) != len(self.conveyor_state):
             self.head_brick_idx = min([x for x in self.conveyor_state.keys() if x not in bricks_sent_to_sorter])
 
-        if self.skip_sorted_bricks_classification:
-            self.classification_worker.set_head_brick_idx(self.head_brick_idx)
-
     def _store_results_and_enqueue_for_classification(self, image_idx: int, brick_id: int,
                                                       detection_result: DetectionResult):
         cropped_image = DetectionUtils.crop_with_margin_from_detection_box(self.images[image_idx],
@@ -185,7 +187,7 @@ class AsyncOrdering:
         detection_id = len(self.bricks[brick_id].analysis_results_list)
         self.bricks[brick_id].analysis_results_list.append(analysis_result)
 
-        self.classification_worker.enqueue((brick_id, detection_id, cropped_image))
+        self.workers.classification.enqueue((brick_id, detection_id, cropped_image))
 
     def _send_to_sorter(self, brick_id_list: List[int]):
         if len(brick_id_list) == 0:
@@ -203,7 +205,7 @@ class AsyncOrdering:
             return
 
         self.bricks[brick_id].final_classification_class = analysis_result.classification_class
-        self.sorting_worker.enqueue((brick_id, analysis_result))
+        self.workers.sorter.enqueue((brick_id, analysis_result))
 
     def _get_analysis_result(self, brick_id) -> Optional[AnalysisResult]:
         analysis_results_list = self.bricks[brick_id].analysis_results_list

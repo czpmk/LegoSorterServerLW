@@ -1,5 +1,3 @@
-import threading
-
 import grpc
 
 from concurrent import futures
@@ -11,18 +9,18 @@ from lego_sorter_server.service.LegoSorterService import LegoSorterService
 from lego_sorter_server.service.LegoAsyncSorterService import LegoAsyncSorterService
 
 from lego_sorter_server.service.BrickCategoryConfig import BrickCategoryConfig
+from lego_sorter_server.sorter.workers.WorkersContainer import WorkersContainer
 
 
 class Server:
 
     @staticmethod
     def run(sorter_config: BrickCategoryConfig, save_images_to_file: bool, reset_state_on_stop: bool,
-            skip_sorted_bricks_classification: bool):
+            workers: WorkersContainer):
         options = [('grpc.max_receive_message_length', 100 * 1024 * 1024)]
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=16), options=options)
         LegoAsyncSorter_pb2_grpc.add_LegoAsyncSorterServicer_to_server(
-            LegoAsyncSorterService(sorter_config, save_images_to_file, reset_state_on_stop,
-                                   skip_sorted_bricks_classification),
+            LegoAsyncSorterService(sorter_config, save_images_to_file, reset_state_on_stop, workers),
             server)
         LegoSorter_pb2_grpc.add_LegoSorterServicer_to_server(
             LegoSorterService(sorter_config, save_images_to_file, reset_state_on_stop),

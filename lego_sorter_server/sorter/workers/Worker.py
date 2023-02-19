@@ -1,68 +1,62 @@
 import logging
-from queue import Queue, Empty
-from threading import Thread
-from typing import Callable
+from enum import Enum
+from multiprocessing import Queue
+from typing import Callable, Optional
+
+
+class WorkerMode(Enum):
+    Thread = 0
+    Process = 1
+
+    @classmethod
+    def from_string(cls, str_mode):
+        return {
+            "Thread": WorkerMode.Thread,
+            "Process": WorkerMode.Process
+        }.get(str_mode)
 
 
 class Worker:
     def __init__(self):
-        self._thread: Thread = Thread()
-        self._queue: Queue = Queue()
-        self._target_method: Callable = lambda queue_object: None
-        '''Override in init method.'''
-        self._callback: Callable = lambda x: None
-        '''Set with set_callback() method.'''
+        self.mode: Optional[WorkerMode] = None
+        self.input_queue: Queue = Queue()
+        self.callback: Optional[Callable] = None
+        self.skipped_items_count = 0
 
-        self._running: bool = False
+        self._name: str = self._type()
+        self._queue_size_limit = 0
 
     def start(self):
-        if self._running is True:
-            logging.exception('[{0}] Attempting to START the worker while it is running.'.format(self._type()))
-            return
-
-        self._running = True
-        self._thread: Thread = Thread(target=self.run)
-        self._thread.start()
+        pass
 
     def stop(self):
-        if self._running is False:
-            logging.exception('[{0}] Attempting to STOP the worker while it is not running.'.format(self._type()))
-            return
+        pass
 
-        self._running = False
-        if self._thread.is_alive():
-            self._thread.join(1)
-        logging.info('[{0}] Stopping thread (Queue size: {1})'.format(self._type(), self._queue.qsize()))
+    def clear_state(self):
+        pass
+
+    def set_queue_size_limit(self, queue_size_limit: int):
+        # Do not use Queue's 'maxsize' - compatibility issues with Ubuntu
+        self._queue_size_limit = queue_size_limit
 
     def clear_queue(self):
-        logging.info('[{0}] Clearing queue (Queue size: {1})'.format(self._type(), self._queue.qsize()))
-        with self._queue.mutex:
-            self._queue.queue.clear()
-
-    def reset(self):
-        if self._running:
-            self.stop()
-
-        self.clear_queue()
-        self.start()
-
-    def run(self):
-        while self._running:
-            try:
-                queue_object = self._queue.get(timeout=0.5)
-            except Empty:
-                continue
-
-            self._target_method(*queue_object)
+        pass
 
     def set_callback(self, callback: Callable):
-        self._callback = callback
+        pass
 
-    def set_target_method(self, target_method: Callable):
-        self._target_method = target_method
+    def enqueue(self, *item):
+        # Do not use Queue's 'maxsize' - compatibility issues on Ubuntu
+        if self._queue_size_limit != 0 and self.input_queue.qsize() >= self._queue_size_limit:
+            logging.debug('[{0}] Queue size reached the limit ({1}). '
+                          'Discarding new item.'.format(self._name, self._queue_size_limit))
+            self.skipped_items_count += 1
 
-    def enqueue(self, item):
-        self._queue.put(item)
+        else:
+            self.input_queue.put(item)
 
     def _type(self) -> str:
         return self.__class__.__name__
+
+    def __del__(self):
+        logging.info('[{0}] Deleter called.'.format(self._name))

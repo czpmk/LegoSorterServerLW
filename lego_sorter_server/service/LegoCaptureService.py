@@ -23,11 +23,11 @@ class LegoCaptureService(LegoCapture_pb2_grpc.LegoCaptureServicer):
         return Empty()
 
     def CollectImages(self, request: ImageStore, context) -> Empty:
-        image = ImageProtoUtils.prepare_image(request)
+        image = ImageProtoUtils.prepare_image_from_request(request)
         self.storage.save_image(image, request.label, "unprocessed")
 
         return Empty()
 
     def _handle_collect_cropped_images(self, request: ImageStore):
-        image = ImageProtoUtils.prepare_image(request)
+        image = ImageProtoUtils.prepare_image_from_request(request)
         self.processing_queue.add(CAPTURE_TAG, image, request.label)
