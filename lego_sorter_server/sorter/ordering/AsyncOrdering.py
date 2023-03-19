@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from collections import OrderedDict
 from typing import List, Tuple, Optional
 from datetime import datetime
@@ -12,12 +13,14 @@ from lego_sorter_server.common.AnalysisResults import AnalysisResultsList, Analy
 from lego_sorter_server.common.BrickSortingStatus import BrickSortingStatus
 from lego_sorter_server.common.ClassificationResults import ClassificationResult
 from lego_sorter_server.common.DetectionResults import DetectionResultsList, DetectionResult, DetectionBox
+from lego_sorter_server.images.storage.LegoImageStorage import LegoImageStorage
 from lego_sorter_server.sorter.workers.WorkersContainer import WorkersContainer
 
 
 class AsyncOrdering:
+
     def __init__(self, save_images_to_file: bool, workers: WorkersContainer):
-        # TODO: add image saving to file functionality and parametrize it with save_images_to_file arg
+
         self.save_images_to_file = save_images_to_file
 
         self.classification_strategy = ClassificationStrategy.MEDIAN
@@ -43,6 +46,8 @@ class AsyncOrdering:
         self.cropped_images: OrderedDict[int, List[Tuple[DetectionResult, Image]]] = OrderedDict()
         '''OrderedDict of DetectionResults and Images, format - key = image_id: int, 
         value = List[Tuple] (DetectionResult, Image)'''
+
+        self.storage: LegoImageStorage = LegoImageStorage()
 
         self.workers: WorkersContainer = workers
 
@@ -101,7 +106,6 @@ class AsyncOrdering:
             self.bricks[brick_id].analysis_results_list[detection_id].time_classified = time_classified
             self.bricks[brick_id].analysis_results_list[detection_id].merge_classification_result(classification_result)
 
-            # TODO: add image storing option
             self.bricks[brick_id].analysis_results_list[detection_id].image = None
 
     def on_sort(self, brick_id):
@@ -186,6 +190,14 @@ class AsyncOrdering:
 
         detection_id = len(self.bricks[brick_id].analysis_results_list)
         self.bricks[brick_id].analysis_results_list.append(analysis_result)
+
+        if self.save_images_to_file is True:
+            start_time_saving = time.time()
+            time_prefix = f"{int(start_time_saving * 10000) % 10000}"  # 10 seconds
+            result_to_save = self.bricks[brick_id].analysis_results_list[detection_id]
+            self.storage.save_image(cropped_image, str(result_to_save.image_id), time_prefix)
+            self.storage.save_image(self.images[image_idx], "original_sorter", time_prefix)
+            logging.info(f"[AsyncOrdering] Saving images took {1000 * (time.time() - start_time_saving)} ms.")
 
         self.workers.classification.enqueue((brick_id, detection_id, cropped_image))
 
