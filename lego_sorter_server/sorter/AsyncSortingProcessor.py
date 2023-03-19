@@ -15,7 +15,7 @@ from lego_sorter_server.sorter.workers.WorkersContainer import WorkersContainer
 
 class AsyncSortingProcessor:
     def __init__(self, brick_category_config: BrickCategoryConfig, save_images_to_file: bool, reset_state_on_stop: bool,
-                 skip_sorted_bricks_classification: bool, workers: WorkersContainer):
+                 workers: WorkersContainer):
         self._running = False
         self.reset_state_on_stop: bool = reset_state_on_stop
 
@@ -27,8 +27,7 @@ class AsyncSortingProcessor:
         self._set_analysis_service()
         self.workers.sorter.set_sorter_controller(self.sorter_controller)
 
-        self.ordering: AsyncOrdering = AsyncOrdering(save_images_to_file, skip_sorted_bricks_classification,
-                                                     self.workers)
+        self.ordering: AsyncOrdering = AsyncOrdering(save_images_to_file, self.workers)
 
     def enqueue_image(self, image: Image):
         logging.debug('[AsyncSortingProcessor] New Image received from CameraController')

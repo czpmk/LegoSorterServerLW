@@ -12,7 +12,6 @@ class Listener(ThreadWorker):
         self.callback = callback
 
     def run(self):
-        """ Unlike other ThreadWorkers - does not process the input in any way, just passes it to callback method. """
         while self.running:
             try:
                 queue_object = self.input_queue.get(timeout=0.5)

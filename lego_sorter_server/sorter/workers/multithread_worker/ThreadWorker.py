@@ -1,7 +1,8 @@
 import logging
+from abc import abstractmethod
 from queue import Empty
 from threading import Thread
-from typing import Callable, Optional
+from typing import Optional
 
 from lego_sorter_server.analysis.AnalysisService import AnalysisService
 from lego_sorter_server.sorter.LegoSorterController import LegoSorterController
@@ -13,7 +14,6 @@ class ThreadWorker(Worker):
         super().__init__()
         self.mode = WorkerMode.Thread
         self.thread: Thread = Thread()
-        self.target_method: Optional[Callable] = None
         self.running: bool = False
 
         self.analysis_service: Optional[AnalysisService] = None
@@ -61,14 +61,9 @@ class ThreadWorker(Worker):
     def set_sorter_controller(self, sorter_controller: LegoSorterController):
         self.sorter_controller = sorter_controller
 
-    def run(self):
-        while self.running:
-            try:
-                queue_object = self.input_queue.get(timeout=0.5)
-            except Empty:
-                continue
-
-            self.target_method(*queue_object)
+    @abstractmethod
+    def run(self, *args):
+        pass
 
     def __del__(self):
         self.clear_state()

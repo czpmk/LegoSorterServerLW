@@ -41,10 +41,6 @@ if __name__ == '__main__':
                         help="save cropped images (bricks only) to file")
     parser.add_argument("--reset_state_on_stop", "-r", action="store_true",
                         help="remove current state on each Stop Sorting call from app")
-    parser.add_argument("--skipp_sorted_bricks_classification", "-s", action="store_true",
-                        help="skip classification of brick images that have already passed the camera line "
-                             "(and are assumed to be in process of sorting or already sorted). "
-                             "(Asynchronous Sorter only!)")
     parser.add_argument("--queue_size_limit", '-l', type=int_in_range_0_100, required=False, default=0,
                         help="Limit the number of items in detection and classification queues "
                              "(Asynchronous Sorter only!). Discards all new items while max queue items are achieved. "
@@ -83,11 +79,11 @@ if __name__ == '__main__':
                                     os.path.abspath('tester_images'))
 
             SorterTester.run(BrickCategoryConfig(args.brick_category_config), args.save_brick_images_to_file,
-                             args.reset_state_on_stop, args.skipp_sorted_bricks_classification, workers, t_config)
+                             args.reset_state_on_stop, workers, t_config)
 
         else:
             Server.run(BrickCategoryConfig(args.brick_category_config), args.save_brick_images_to_file,
-                       args.reset_state_on_stop, args.skipp_sorted_bricks_classification, workers)
+                       args.reset_state_on_stop, workers)
 
     except Exception:
         exception_handler(*sys.exc_info())

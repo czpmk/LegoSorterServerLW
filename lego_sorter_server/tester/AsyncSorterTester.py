@@ -15,9 +15,9 @@ from lego_sorter_server.tester.TesterConfig import TesterConfig
 
 class AsyncSorterTester:
     def __init__(self, brick_category_config: BrickCategoryConfig, save_images_to_file: bool, reset_state_on_stop: bool,
-                 skip_sorted_bricks_classification: bool, workers: WorkersContainer, tester_config: TesterConfig):
+                 workers: WorkersContainer, tester_config: TesterConfig):
         self.sortingProcessor = AsyncSortingProcessor(brick_category_config, save_images_to_file, reset_state_on_stop,
-                                                      skip_sorted_bricks_classification, workers)
+                                                      workers)
 
         self.workers: WorkersContainer = workers
         self.tester_config: TesterConfig = tester_config
